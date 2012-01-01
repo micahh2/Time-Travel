@@ -1,0 +1,99 @@
+//#include <SDL>
+#include <iostream>
+#include <time.h>
+#include <stdlib.h>
+#include "data.h"
+#include "ob.h"
+
+#define debug false
+
+using namespace std;
+class screen
+{
+	private:
+		bool running;
+		SDL_Surface* Surf_Display
+	public:
+		screen();
+		int OnExecute();
+
+		bool OnInit();
+		void OnEvent(SDL_Event* Event);
+		void OnLoop();
+		void OnRender();
+		void OnCleanup();
+};
+
+int main()
+{
+	srand(time(NULL));
+	int ob::counter = 0; //Setting up the Id's
+	cout << "Hello world!!" << endl;
+	char map = new char[X_SIZE][Y_SIZE];
+	map* = mapGen(map)
+	
+	while(game==true)
+	{
+		for (int i = 0; i < updateable.size(); i++)
+		{
+			updateable[i].go();
+		}
+	}
+
+}
+
+class map
+{
+	private:
+
+	public:
+		ob* subMap;	
+
+		bool map(old)
+		{
+			subMap = old.subMap;
+		}
+		bool map()
+		{
+		}
+};
+
+map::ob* mapGen(ob* board)
+{
+	for(int i = CHARNUM; i >= 0; i--)
+	{
+		int k = 0;
+		int x = 0;
+		int y = 0;
+		do
+		{
+		int k++;
+		x = rand() % X_SIZE;	
+		y = rand() % Y_SIZE;	
+		test = board[x][y];
+		};while (test != blank && k < (X_SIZE * Y_SIZE * 100))
+		if (test == blank)
+		{
+			board[x][y] = new player();
+		}
+		else if (debug)
+		{
+			cout << "Error in random character gen." << endl;
+			cout << "No place to put char" << endl;
+		}
+		
+	}
+
+	bool onInit()
+	{
+		if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+		{
+			return false;
+		}
+		if ((Surf_Display = SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE | SDL_DOUBLEBUF)) == NULL)
+		{
+			return false;
+		}
+		return true;
+	}
+}

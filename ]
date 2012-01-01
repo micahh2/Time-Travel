@@ -1,0 +1,56 @@
+#include <stdlib.h>
+#include "data.h"
+#ifndef OBJ
+#define OBJ
+
+// This header file contains the basic types that aren't reall useable in the game.
+// Specific types are defined in "players.h" and "buildings.h"
+using namespace std;
+
+//The mother of all objects
+//No size no place, just a name and an ID
+//The counter makes sure that no object gets the same ID.
+class obj
+{
+	protected:
+		static int counter;
+	public:
+		int id;
+		string name;
+
+		obj();
+		obj(string nm);
+
+};
+//Thing is the mother of all 3D objects. Basically all of eveything.
+class thing : public obj
+{
+  protected:
+    int health;
+	public:
+		string img;
+    dim place;
+    dim size;
+    vector<ob> created;
+    bool attack();
+    bool defend();
+    bool stop();
+    bool die();
+    int getHealth();
+};
+
+class building : public thing
+{
+    protected:
+        int progress;
+    public:
+        char type;
+        char weapon;
+        int getProgress();
+};
+class unit : public thing
+{
+    public:
+        char defence;
+};
+#endif
