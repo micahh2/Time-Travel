@@ -24,11 +24,12 @@ void init()
     width = 1100;
     length = 700;
     updateTime = 0;
-    objects.push_back(character(rand()%(length-10), rand()%(width-10)));
-    objects.push_back(character(rand()%(length-10), rand()%(width-10)));
-    objects.push_back(character(rand()%(length-10), rand()%(width-10)));
-    objects.push_back(character(rand()%(length-10), rand()%(width-10)));
-    objects.push_back(character(rand()%(length-10), rand()%(width-10)));
+    for (int i =0; i<10; i++)
+    {
+        int tsize = rand()%30+1;
+        int hs = tsize/2;
+        objects.push_back(character(rand()%(length-tsize)+hs, rand()%(width-tsize)+hs, tsize, rand()%10+1));
+    }
 }
 
 class screen
@@ -96,7 +97,7 @@ class screen
             drawRect(0, 0, width, length);
             for(unsigned int i = 0; i < objects->size(); i++)
             {
-                drawRect(objects->at(i).loc.y, objects->at(i).loc.x, 10, 10, 255, 190, 10);
+                drawRect(objects->at(i).loc.y, objects->at(i).loc.x, objects->at(i).size, objects->at(i).size, 255, 190, 10);
             }
             SDL_Flip(mainframe);
             return;
