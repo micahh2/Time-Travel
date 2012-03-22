@@ -9,7 +9,9 @@ using namespace std;
 
 int width;
 int length;
+int rate;
 vector<character> objects;
+thing dragBox(0,0,0,0);
 double updateTime;
 
 void wait(double seconds)
@@ -23,12 +25,14 @@ void init()
 {
     width = 1100;
     length = 700;
+    rate = 0;
     updateTime = 0;
+    //dragbox = thing(0, 0, 0, 0);
     for (int i =0; i<10; i++)
     {
         int tsize = rand()%30+1;
         int hs = tsize/2;
-        objects.push_back(character(rand()%(length-tsize)+hs, rand()%(width-tsize)+hs, tsize, rand()%10+1));
+        objects.push_back(character(rand()%(length-tsize)+hs, rand()%(width-tsize)+hs, tsize, tsize, rand()%10+1));
     }
 }
 
@@ -37,6 +41,9 @@ class screen
     private:
         SDL_Surface *mainframe;
         SDL_Event event;
+        int eventx;
+        int eventy;
+        bool drag;
     public:
         screen()
         {
@@ -47,6 +54,10 @@ class screen
             else
                 mainframe = SDL_SetVideoMode(width, length, 16, SDL_SWSURFACE | SDL_RESIZABLE);
             drawRect(0, 0, width, length);
+            drag = false;
+            //Event pos set
+            eventx = 0;
+            eventy = 0;
         }
         void draw(int x, int y, Uint32 color)
         {
@@ -94,25 +105,81 @@ class screen
         }
         void update(vector<character> *objects)
         {
-            drawRect(0, 0, width, length);
-            for(unsigned int i = 0; i < objects->size(); i++)
+            if (rate == 0)
             {
-                drawRect(objects->at(i).loc.y, objects->at(i).loc.x, objects->at(i).size, objects->at(i).size, 255, 190, 10);
+                drawRect(0, 0, width, length);
+                for(unsigned int i = 0; i < objects->size(); i++)
+                {
+                    drawRect(objects->at(i).loc.y, objects->at(i).loc.x, objects->at(i).size.x, objects->at(i).size.y, 255, 190, 10);
+                }
+                if (dragBox.on)
+                {
+                    drawRect(dragBox.loc.x, dragBox.loc.y, dragBox.size.x, dragBox.size.y, 0, 255, 255);
+                }
+                rate = 5;
+                SDL_Flip(mainframe);
             }
-            SDL_Flip(mainframe);
+            else
+                rate--;
             return;
         }
+
         bool events(vector<character> *objects)
         {
             SDL_PollEvent(&event);
             if (event.type == SDL_QUIT)
                 return false;
-            if (event.type == SDL_MOUSEBUTTONDOWN)
+            if (event.type == SDL_MOUSEBUTTONDOWN || drag)
             {
-                for(unsigned int i = 0; i < objects->size(); i++)
+                if (!drag)
                 {
-                    objects->at(i).dest.x = event.button.y;
-                    objects->at(i).dest.y = event.button.x;
+                    eventx = event.button.x;
+                    eventy = event.button.y;
+                    cout << "I'm setting the down click at x:" << eventx << " y:" << eventy << endl;
+                }
+                //If the selection box is to be drawn
+                else
+                {
+                    dragBox.on = true;
+                    if (eventx > event.button.x)
+                    {
+                        dragBox.size.x = eventx - event.button.x;
+                        dragBox.loc.x = event.button.x;
+                    }
+                    else
+                    {
+                        dragBox.size.x = event.button.x - eventx;
+                        dragBox.loc.x = eventx;
+                    }
+                    if (eventy > event.button.y)
+                    {
+                        dragBox.size.y = eventy - event.button.y;
+                        dragBox.loc.y = event.button.y;
+                    }
+                    else
+                    {
+                        dragBox.size.y = event.button.y - eventy;
+                        dragBox.loc.y = eventy;
+                    }
+                }
+                drag = true;
+            }
+            //Moved drag to only change when the mouse hasn't moved
+            if(event.type == SDL_MOUSEBUTTONUP)
+            {
+                dragBox.on = false;
+                drag = false;
+                if (abs(event.button.x-eventx) <=3 && abs(event.button.y-eventy) <=3)
+                {
+                    //Sets the dest for all the *selected* objects
+                    for(unsigned int i = 0; i < objects->size(); i++)
+                    {
+                        if(objects->at(i).selected)
+                        {
+                            objects->at(i).dest.x = event.button.y;
+                            objects->at(i).dest.y = event.button.x;
+                        }
+                    }
                 }
             }
             if (event.type == SDL_VIDEORESIZE)

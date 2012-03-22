@@ -10,22 +10,32 @@ struct dim
     int x;
     int y;
 };
-
-class character
+//Character inherits from thing
+class thing
 {
-    private:
+    protected:
         static int nextId;
     public:
-        int colId;
+        bool on;
         int id;
+        int colId;
         dim loc;
+        dim size;
+
+        thing(int locx, int locy, int insizex, int insizey);
+};
+
+class character : public thing
+{
+    public:
+        bool selected;
         dim dest;
-        int size;
         int speed;
         bool pause;
         character(int locx, int locy);
-        character(int locx, int locy, int insize);
-        character(int locx, int locy, int insize, int inspeed);
+        character(int locx, int locy, int insizex, int insizey);
+        character(int locx, int locy, int insizex, int insizey, int inspeed);
+        void init(int locx, int locy, int inspeed);
 };
 
 class map

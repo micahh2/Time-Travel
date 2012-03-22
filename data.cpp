@@ -8,39 +8,40 @@
 
 using namespace std;
 
-int character::nextId = 0;
-character::character(int locx, int locy, int insize, int inspeed)
+
+int thing::nextId = 0;
+
+thing::thing(int locx, int locy, int insizex, int insizey)
 {
     id = nextId++;
+    colId = 0;
     loc.x = locx;
     loc.y = locy;
+    size.x = insizex;
+    size.y = insizey;
+}
+
+character::character(int locx, int locy, int insizex, int insizey, int inspeed) : thing(locx, locy, insizex, insizey)
+{
+    init(locx, locy, inspeed);
+}
+character::character(int locx, int locy, int insizex, int insizey) : thing(locx, locy, insizex, insizey)
+{
+    init(locx, locy, 10);
+}
+character::character(int locx, int locy) : thing(locx, locy, 5, 5)
+{
+    init(locx, locy, 10);
+}
+
+void character::init(int locx, int locy, int inspeed)
+{
+    id = nextId++;
     dest.x = locx;
     dest.y = locy;
-    size = insize;
     speed = inspeed;
     pause = false;
-}
-character::character(int locx, int locy, int insize)
-{
-    id = nextId++;
-    loc.x = locx;
-    loc.y = locy;
-    dest.x = locx;
-    dest.y = locy;
-    size = insize;
-    speed = 5;
-    pause = false;
-}
-character::character(int locx, int locy)
-{
-    id = nextId++;
-    loc.x = locx;
-    loc.y = locy;
-    dest.x = locx;
-    dest.y = locy;
-    size = 10;
-    speed = 5;
-    pause = false;
+    selected = true;
 }
 
 map::map(string filetype)
@@ -73,11 +74,13 @@ vector<character>* map::update(vector<character> *objects)
     {
             int x = objects->at(i).loc.x;
             int y = objects->at(i).loc.y;
+            int tempx = objects->at(i).loc.x;
+            int tempy = objects->at(i).loc.y;
+            
             int destx = objects->at(i).dest.x;
             int desty = objects->at(i).dest.y;
             int speed = objects->at(i).speed;
-            int tempx = objects->at(i).loc.x;
-            int tempy = objects->at(i).loc.y;
+            
             if (abs(x-destx)>=2+(speed/2))
             {
                 if(x<destx)
@@ -97,16 +100,19 @@ vector<character>* map::update(vector<character> *objects)
             //Need to come up with better checking
             //B   B   B
             // B  B  B
+            // ... Came up with better checking? NOPE!
+            // Add two step collision checking
+            // Need to have more polite blocks.
             for(unsigned int j=0; j<objects->size() && !crashx && !crashy; j++)
             {
                 if (j != i)
                 {
-                    int sizex = objects->at(j).size;
-                    int sizey = objects->at(j).size;
+                    int sizex = objects->at(j).size.x;
+                    int sizey = objects->at(j).size.y;
                     if (objects->at(j).loc.x > tempx)
-                        sizex = objects->at(i).size;
+                        sizex = objects->at(i).size.x;
                     if (objects->at(j).loc.y > tempy)
-                        sizey = objects->at(i).size;
+                        sizey = objects->at(i).size.y;
                     if (abs(objects->at(j).loc.x-tempx) < sizex && abs(objects->at(j).loc.y-tempy) < sizey) 
                     {
                         objects->at(i).colId = objects->at(j).id;
@@ -115,6 +121,7 @@ vector<character>* map::update(vector<character> *objects)
                     }
                 }
             }
+            //Semi useless to have two if(s) right now... But later it will be good.
             if (!crashx)
                 objects->at(i).loc.x = tempx;
             if (!crashy)
