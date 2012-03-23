@@ -16,6 +16,7 @@ class thing
     protected:
         static int nextId;
     public:
+        static vector<thing> known;
         bool on;
         int id;
         int colId;
@@ -25,6 +26,7 @@ class thing
         void init(int locx, int locy, int insizex, int insizey);
         thing(int locx, int locy, int insizex, int insizey);
         thing();
+        bool aStar();
 };
 
 class character : public thing
@@ -34,6 +36,7 @@ class character : public thing
         dim dest;
         int speed;
         bool pause;
+
         character(int locx, int locy);
         character(int locx, int locy, int insizex, int insizey);
         character(int locx, int locy, int insizex, int insizey, int inspeed);

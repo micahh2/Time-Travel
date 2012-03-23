@@ -28,6 +28,11 @@ thing::thing()
 {
     init(0,0,0,0);
 }
+bool thing::aStar()
+{
+    cout << "I'm not ready to A*!" << endl;
+    return true;
+}
 
 character::character(int locx, int locy, int insizex, int insizey, int inspeed) : thing(locx, locy, insizex, insizey)
 {
@@ -51,6 +56,7 @@ void character::init(int locx, int locy, int inspeed)
     pause = false;
     selected = true;
 }
+
 
 bool character::collision()
 {
@@ -102,7 +108,7 @@ vector<character>* map::update(vector<character> *objects)
                 if(x>destx)
                     tempx-=speed;
             }
-            if (abs(y-desty)>=2+(speed/2))
+            if (abs(y-desty)>=1+(speed/2))
             {
                 if(y<desty)
                     tempy+=speed;
@@ -115,25 +121,60 @@ vector<character>* map::update(vector<character> *objects)
             // Need to have more polite/smart blocks.
             //B   B   B
             // B  B  B
-            for(unsigned int j=0; j<objects->size() && !crashx && !crashy; j++)
+            for(unsigned int j=0; j<objects->size() && (!crashx || !crashy); j++)
             {
                 if (j != i)
                 {
                     int sizex = objects->at(j).size.x;
                     int sizey = objects->at(j).size.y;
+                    int size2x = objects->at(j).size.x;
+                    int size2y = objects->at(j).size.y;
+
                     if (objects->at(j).loc.x > tempx)
                         sizex = objects->at(i).size.x;
                     if (objects->at(j).loc.y > tempy)
                         sizey = objects->at(i).size.y;
-                    if (abs(objects->at(j).loc.x-tempx) < sizex && abs(objects->at(j).loc.y-tempy) < sizey) 
+                    if (objects->at(j).loc.x > objects->at(i).loc.x)
+                        size2x = objects->at(i).size.x;
+                    if (objects->at(j).loc.y > objects->at(i).loc.y)
+                        size2y = objects->at(i).size.y;
+
+                    if (abs(objects->at(j).loc.x-tempx) < sizex && abs(objects->at(j).loc.y-objects->at(i).loc.y) < size2y) 
                     {
+                        //FIXME
+                        //Running into people.
                         objects->at(i).colId = objects->at(j).id;
                         crashx = true;
+                    }
+                    if (abs(objects->at(j).loc.x-objects->at(i).loc.x) < size2x && abs(objects->at(j).loc.y-tempy) < sizey) 
+                    {
+                        //FIXME
+                        //Running into people.
+                        objects->at(i).colId = objects->at(j).id;
                         crashy = true;
                     }
+                    if (!crashy && !crashx)
+                    {
+                        if (abs(objects->at(j).loc.x-tempx) < sizex && abs(objects->at(j).loc.y-tempy) < sizey) 
+                        {
+                            if(rand()%2==0)
+                            {
+                                crashy=true;
+                                cout << "No y for you!" << endl;
+                            }
+                            else
+                            {
+                                cout << "No x for you!" << endl;
+                                crashx=true;
+                            }
+                        }
+                    }
+
+
                 }
             }
             //Semi useless to have two if(s) right now... But later it will be good.
+            //No! it's cool!!
             if (!crashx)
                 objects->at(i).loc.x = tempx;
             if (!crashy)

@@ -3,16 +3,18 @@
 #include <SDL/SDL.h>
 #include <time.h>
 #include "data.h"
+#include "aStar.cpp"
 #include <vector>
 
 using namespace std;
 
 int width;
 int length;
-int rate;
+double rate;
 vector<character> objects;
 thing dragBox(0,0,0,0);
-double updateTime;
+int frameRate;
+double gameSpeed;
 
 //Waits for you, so you don't have to!
 //Useless?
@@ -28,11 +30,12 @@ void init()
 {
     width = 1100;
     length = 700;
-    rate = 5;
-    updateTime = 0;
+    frameRate = 6;
+    //Need a better way...
+    //gameSpeed = 999999999999;
     for (int i =0; i<10; i++)
     {
-        int tsize = rand()%30+1;
+        int tsize = rand()%30+20;
         int hs = tsize/2;
         objects.push_back(character(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+1));
     }
@@ -208,7 +211,7 @@ class screen
                 }
                 drag = true;
             }
-            if(event.type == SDL_MOUSEBUTTONUP)
+            if(event.type == SDL_MOUSEBUTTONUP && drag)
             {
                 dragBox.on = false;
                 drag = false;
@@ -220,18 +223,21 @@ class screen
                 else
                 {
                     bool clickedObj = false;
+                    //Check if you are clicking on a character in the objects vector
                     for(unsigned int i = 0; i < objects->size() && !clickedObj; i++)
                     {
-                        if(abs(objects->at(i).loc.x-event.button.x)<=objects->at(i).size.x)
-                            if (abs(objects->at(i).loc.y-event.button.y)<=objects->at(i).size.y)
+                        if(event.button.x-objects->at(i).loc.x<=objects->at(i).size.x && event.button.x-objects->at(i).loc.x>=0)
+                            if (event.button.y-objects->at(i).loc.y<=objects->at(i).size.y && event.button.y-objects->at(i).loc.y>=0)
                             {
                                 clickedObj = true;
+                                for(unsigned int j = 0; j < objects->size(); j++)
+                                    objects->at(j).selected = false;
                                 objects->at(i).selected = true;
                             }
                     }
                     if (!clickedObj && abs(event.button.x-eventx) <=3 && abs(event.button.y-eventy) <=3)
                     {
-                        //Sets the dest for all the *selected* objects
+                        //Sets the dest for all the selected objects
                         for(unsigned int i = 0; i < objects->size(); i++)
                         {
                             if(objects->at(i).selected)
@@ -262,18 +268,20 @@ int main() {
     screen frame;
     bool game = true;
     map *currentMap = new map("filename.lev");
-    int count = 0;
+    int count = 1;
+    double tempo = 0;
     while (game)
     {
-        game = frame.events(&objects); //Check for terminating events
-        currentMap->update(&objects); //Update char maps
-        if(count == 0)
+        if (clock()>=tempo)
         {
-            frame.update(&objects); //Update screen
-            count = rate;
+            //FIXME
+            tempo = clock() ;//+ (1/(gameSpeed) * CLOCKS_PER_SEC;
+            game = frame.events(&objects); //Check for terminating events
+            currentMap->update(&objects); //Update char maps
+            if(abs(count%frameRate) == 0)
+                frame.update(&objects); //Update screen
+            count++;
         }
-        else
-            count--;
         //repeat
     }
     delete currentMap;
