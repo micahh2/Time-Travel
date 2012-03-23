@@ -14,6 +14,8 @@ vector<character> objects;
 thing dragBox(0,0,0,0);
 double updateTime;
 
+//Waits for you, so you don't have to!
+//Useless?
 void wait(double seconds)
 {
     double doneTime;
@@ -21,21 +23,22 @@ void wait(double seconds)
     while (clock() < doneTime);
 }
 
+//Initializes all of the global variables
 void init()
 {
     width = 1100;
     length = 700;
-    rate = 0;
+    rate = 5;
     updateTime = 0;
-    //dragbox = thing(0, 0, 0, 0);
     for (int i =0; i<10; i++)
     {
         int tsize = rand()%30+1;
         int hs = tsize/2;
-        objects.push_back(character(rand()%(length-tsize)+hs, rand()%(width-tsize)+hs, tsize, tsize, rand()%10+1));
+        objects.push_back(character(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+1));
     }
 }
 
+//Its got the window in its hands...
 class screen
 {
     private:
@@ -105,22 +108,19 @@ class screen
         }
         void update(vector<character> *objects)
         {
-            if (rate == 0)
+            drawRect(0, 0, width, length);
+            for(unsigned int i = 0; i < objects->size(); i++)
             {
-                drawRect(0, 0, width, length);
-                for(unsigned int i = 0; i < objects->size(); i++)
-                {
-                    drawRect(objects->at(i).loc.y, objects->at(i).loc.x, objects->at(i).size.x, objects->at(i).size.y, 255, 190, 10);
-                }
-                if (dragBox.on)
-                {
-                    drawRect(dragBox.loc.x, dragBox.loc.y, dragBox.size.x, dragBox.size.y, 0, 255, 255);
-                }
-                rate = 5;
-                SDL_Flip(mainframe);
+                if (objects->at(i).selected)
+                    drawRect(objects->at(i).loc.x, objects->at(i).loc.y, objects->at(i).size.x, objects->at(i).size.y, 0, 190, 100);
+                else
+                    drawRect(objects->at(i).loc.x, objects->at(i).loc.y, objects->at(i).size.x, objects->at(i).size.y, 255, 190, 10);
             }
-            else
-                rate--;
+            if (dragBox.on)
+            {
+                drawRect(dragBox.loc.x, dragBox.loc.y, dragBox.size.x, dragBox.size.y, 0, 255, 255);
+            }
+            SDL_Flip(mainframe);
             return;
         }
 
@@ -135,10 +135,11 @@ class screen
                 {
                     eventx = event.button.x;
                     eventy = event.button.y;
-                    cout << "I'm setting the down click at x:" << eventx << " y:" << eventy << endl;
+                    //cout << "I'm setting the down click at x:" << eventx << " y:" << eventy << endl;
                 }
                 //If the selection box is to be drawn
-                else
+                //Only start checking for selected things if the mouse has moved
+                else if (abs(event.button.x-eventx) >=7 || abs(event.button.y-eventy) >=7)
                 {
                     dragBox.on = true;
                     if (eventx > event.button.x)
@@ -161,23 +162,83 @@ class screen
                         dragBox.size.y = event.button.y - eventy;
                         dragBox.loc.y = eventy;
                     }
+                    for(unsigned int i = 0; i < objects->size(); i++)
+                    {
+                        //The first one is the lowest y loc + the lowest x loc and the coresponding size values;
+                        //The second one is the other x and y loc ..
+                        thing comp1;
+                        thing comp2;
+                        if(objects->at(i).loc.x < dragBox.loc.x)
+                        {
+                            comp1.loc.x = objects->at(i).loc.x;
+                            comp1.size.x = objects->at(i).size.x;
+                            comp2.loc.x = dragBox.loc.x;
+                            comp2.size.x = dragBox.size.x;
+                        }
+                        else
+                        {
+                            comp1.loc.x = dragBox.loc.x;
+                            comp1.size.x = dragBox.size.x;
+                            comp2.loc.x = objects->at(i).loc.x;
+                            comp2.size.x = objects->at(i).size.x;
+                        }
+
+                        if(objects->at(i).loc.y < dragBox.loc.y)
+                        {
+                            comp1.loc.y = objects->at(i).loc.y;
+                            comp1.size.y = objects->at(i).size.y;
+                            comp2.loc.y = dragBox.loc.y;
+                            comp2.size.y = dragBox.size.y;
+                        }
+                        else
+                        {
+                            comp1.loc.y = dragBox.loc.y;
+                            comp1.size.y = dragBox.size.y;
+                            comp2.loc.y = objects->at(i).loc.y;
+                            comp2.size.y = objects->at(i).size.y;
+                        }
+                        if(abs(comp1.loc.x-comp2.loc.x)<=comp1.size.x && abs(comp1.loc.y-comp2.loc.y)<=comp1.size.y)
+                        {
+                            objects->at(i).selected = true;
+                        }
+                        else
+                            objects->at(i).selected = false;
+                    }
+
                 }
                 drag = true;
             }
-            //Moved drag to only change when the mouse hasn't moved
             if(event.type == SDL_MOUSEBUTTONUP)
             {
                 dragBox.on = false;
                 drag = false;
-                if (abs(event.button.x-eventx) <=3 && abs(event.button.y-eventy) <=3)
+                if (event.button.button == SDL_BUTTON_RIGHT)
                 {
-                    //Sets the dest for all the *selected* objects
                     for(unsigned int i = 0; i < objects->size(); i++)
+                        objects->at(i).selected=false;
+                }
+                else
+                {
+                    bool clickedObj = false;
+                    for(unsigned int i = 0; i < objects->size() && !clickedObj; i++)
                     {
-                        if(objects->at(i).selected)
+                        if(abs(objects->at(i).loc.x-event.button.x)<=objects->at(i).size.x)
+                            if (abs(objects->at(i).loc.y-event.button.y)<=objects->at(i).size.y)
+                            {
+                                clickedObj = true;
+                                objects->at(i).selected = true;
+                            }
+                    }
+                    if (!clickedObj && abs(event.button.x-eventx) <=3 && abs(event.button.y-eventy) <=3)
+                    {
+                        //Sets the dest for all the *selected* objects
+                        for(unsigned int i = 0; i < objects->size(); i++)
                         {
-                            objects->at(i).dest.x = event.button.y;
-                            objects->at(i).dest.y = event.button.x;
+                            if(objects->at(i).selected)
+                            {
+                                objects->at(i).dest.x = event.button.x;
+                                objects->at(i).dest.y = event.button.y;
+                            }
                         }
                     }
                 }
@@ -206,8 +267,13 @@ int main() {
     {
         game = frame.events(&objects); //Check for terminating events
         currentMap->update(&objects); //Update char maps
-        frame.update(&objects); //Update screen
-        count++;
+        if(count == 0)
+        {
+            frame.update(&objects); //Update screen
+            count = rate;
+        }
+        else
+            count--;
         //repeat
     }
     delete currentMap;

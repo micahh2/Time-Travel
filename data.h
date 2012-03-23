@@ -22,7 +22,9 @@ class thing
         dim loc;
         dim size;
 
+        void init(int locx, int locy, int insizex, int insizey);
         thing(int locx, int locy, int insizex, int insizey);
+        thing();
 };
 
 class character : public thing
@@ -36,6 +38,7 @@ class character : public thing
         character(int locx, int locy, int insizex, int insizey);
         character(int locx, int locy, int insizex, int insizey, int inspeed);
         void init(int locx, int locy, int inspeed);
+        bool collision();
 };
 
 class map

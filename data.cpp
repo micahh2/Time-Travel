@@ -11,7 +11,7 @@ using namespace std;
 
 int thing::nextId = 0;
 
-thing::thing(int locx, int locy, int insizex, int insizey)
+void thing::init(int locx, int locy, int insizex, int insizey)
 {
     id = nextId++;
     colId = 0;
@@ -19,6 +19,14 @@ thing::thing(int locx, int locy, int insizex, int insizey)
     loc.y = locy;
     size.x = insizex;
     size.y = insizey;
+}
+thing::thing(int locx, int locy, int insizex, int insizey)
+{
+    init(locx, locy, insizex, insizey);
+}
+thing::thing()
+{
+    init(0,0,0,0);
 }
 
 character::character(int locx, int locy, int insizex, int insizey, int inspeed) : thing(locx, locy, insizex, insizey)
@@ -42,6 +50,12 @@ void character::init(int locx, int locy, int inspeed)
     speed = inspeed;
     pause = false;
     selected = true;
+}
+
+bool character::collision()
+{
+    //aStar(id, dest);
+    return true;
 }
 
 map::map(string filetype)
@@ -81,7 +95,7 @@ vector<character>* map::update(vector<character> *objects)
             int desty = objects->at(i).dest.y;
             int speed = objects->at(i).speed;
             
-            if (abs(x-destx)>=2+(speed/2))
+            if (abs(x-destx)>=1+(speed/2))
             {
                 if(x<destx)
                     tempx+=speed;
@@ -97,12 +111,10 @@ vector<character>* map::update(vector<character> *objects)
             }
             bool crashy = false;
             bool crashx = false;
-            //Need to come up with better checking
+            // Add two step collision checking
+            // Need to have more polite/smart blocks.
             //B   B   B
             // B  B  B
-            // ... Came up with better checking? NOPE!
-            // Add two step collision checking
-            // Need to have more polite blocks.
             for(unsigned int j=0; j<objects->size() && !crashx && !crashy; j++)
             {
                 if (j != i)
