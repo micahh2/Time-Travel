@@ -10,6 +10,14 @@ struct dim
     int x;
     int y;
 };
+enum collisionType
+{
+     neither,
+     xmove,
+     ymove,
+     both
+};
+
 //Character inherits from thing
 class thing
 {
@@ -54,6 +62,7 @@ class map
 
         map(string fileName);
         vector<character>* update(vector<character> *objects);
+        int collide(character object1, character object2, int tempx, int tempy);
         ~map();
 
 };

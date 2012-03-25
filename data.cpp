@@ -90,98 +90,118 @@ map::map(string filetype)
 
 vector<character>* map::update(vector<character> *objects)
 {
-    for (unsigned int i = 0; i < objects->size(); i++)
+    //Temp vars | DELETE
+    int pastNum = -1;
+    int pastTempx = -1;
+    int pastTempy = -1;
+    for(unsigned int i = 0; i < objects->size(); i++)
     {
-            int x = objects->at(i).loc.x;
-            int y = objects->at(i).loc.y;
-            int tempx = objects->at(i).loc.x;
-            int tempy = objects->at(i).loc.y;
-            
-            int destx = objects->at(i).dest.x;
-            int desty = objects->at(i).dest.y;
-            int speed = objects->at(i).speed;
-            
-            if (abs(x-destx)>=1+(speed/2))
+
+        int colNum = 0;
+        int tempx = objects->at(i).loc.x;
+        int tempy = objects->at(i).loc.y; 
+        if (abs(objects->at(i).loc.x-objects->at(i).dest.x)>=1+(objects->at(i).speed/2))
+        {
+            if(objects->at(i).loc.x<objects->at(i).dest.x)
+                tempx+=objects->at(i).speed;
+            if(objects->at(i).loc.x>objects->at(i).dest.x)
+                tempx-=objects->at(i).speed;
+        }
+        if (abs(objects->at(i).loc.y-objects->at(i).dest.y)>=1+(objects->at(i).speed/2))
+        {
+            if(objects->at(i).loc.y<objects->at(i).dest.y)
+                tempy+=objects->at(i).speed;
+            if(objects->at(i).loc.y>objects->at(i).dest.y)
+                tempy-=objects->at(i).speed;
+        }
+        for(unsigned int j = 0; j < objects->size() && colNum !=3; j++)
+        {
+            if (objects->at(i).id != objects->at(j).id)
             {
-                if(x<destx)
-                    tempx+=speed;
-                if(x>destx)
-                    tempx-=speed;
-            }
-            if (abs(y-desty)>=1+(speed/2))
-            {
-                if(y<desty)
-                    tempy+=speed;
-                if(y>desty)
-                    tempy-=speed;
-            }
-            bool crashy = false;
-            bool crashx = false;
-            // Add two step collision checking
-            // Need to have more polite/smart blocks.
-            //B   B   B
-            // B  B  B
-            for(unsigned int j=0; j<objects->size() && (!crashx || !crashy); j++)
-            {
-                if (j != i)
+                int temp = collide(objects->at(i), objects->at(j), tempx, tempy);
+                switch(temp)
                 {
-                    int sizex = objects->at(j).size.x;
-                    int sizey = objects->at(j).size.y;
-                    int size2x = objects->at(j).size.x;
-                    int size2y = objects->at(j).size.y;
-
-                    if (objects->at(j).loc.x > tempx)
-                        sizex = objects->at(i).size.x;
-                    if (objects->at(j).loc.y > tempy)
-                        sizey = objects->at(i).size.y;
-                    if (objects->at(j).loc.x > objects->at(i).loc.x)
-                        size2x = objects->at(i).size.x;
-                    if (objects->at(j).loc.y > objects->at(i).loc.y)
-                        size2y = objects->at(i).size.y;
-
-                    if (abs(objects->at(j).loc.x-tempx) < sizex && abs(objects->at(j).loc.y-objects->at(i).loc.y) < size2y) 
-                    {
-                        //FIXME
-                        //Running into people.
-                        objects->at(i).colId = objects->at(j).id;
-                        crashx = true;
-                    }
-                    if (abs(objects->at(j).loc.x-objects->at(i).loc.x) < size2x && abs(objects->at(j).loc.y-tempy) < sizey) 
-                    {
-                        //FIXME
-                        //Running into people.
-                        objects->at(i).colId = objects->at(j).id;
-                        crashy = true;
-                    }
-                    if (!crashy && !crashx)
-                    {
-                        if (abs(objects->at(j).loc.x-tempx) < sizex && abs(objects->at(j).loc.y-tempy) < sizey) 
+                    case 1:
+                        if(colNum == 2)
                         {
-                            if(rand()%2==0)
-                            {
-                                crashy=true;
-                                cout << "No y for you!" << endl;
-                            }
-                            else
-                            {
-                                cout << "No x for you!" << endl;
-                                crashx=true;
-                            }
+                            colNum = 3;
+                            break;
                         }
-                    }
-
-
+                    case 2:
+                        if(colNum == 1)
+                        {
+                            colNum = 3;
+                            break;
+                        }
+                    case 3:
+                    case 0:
+                    default:
+                        colNum = temp;
                 }
+                if(temp == 4)
+                {
+                    cout << "BUGG!!" << endl;
+                    if(pastNum != -1)
+                    {
+                        cout << "The past num is: " << pastNum << endl;
+                        cout << "The past cordanates: " << pastTempx << ", " << pastTempy << endl << endl;
+                    }
+                }
+                //DELETE
+                pastNum = temp;
+                pastTempx = tempx;
+                pastTempy = tempy;
             }
-            //Semi useless to have two if(s) right now... But later it will be good.
-            //No! it's cool!!
-            if (!crashx)
-                objects->at(i).loc.x = tempx;
-            if (!crashy)
-                objects->at(i).loc.y = tempy;
+        }
+        if(colNum == 1 || colNum == 0)
+            objects->at(i).loc.x = tempx;
+        if (colNum == 2 || colNum == 0)
+            objects->at(i).loc.y = tempy;
     }
-
     return objects;
+}
+
+//function collide
+//returns 0 if no collision
+//returns 1 if x collision
+//returns 2 if y collision
+//returns 3 if x and y collision
+//FIXME
+//Need an ENUM to make things more clear?
+int map::collide(const character object1, const character object2, const int tempx, const int tempy)
+{
+    int crash = 0;
+
+    // Need to have more polite/smart blocks.
+    int sizex = object1.size.x;
+    int sizey = object1.size.y;
+    int size2x = object1.size.x;
+    int size2y = object1.size.y;
+
+    if (object2.loc.x < tempx)
+        sizex = object2.size.x;
+    if (object2.loc.y < tempy)
+        sizey = object2.size.y;
+
+    if (object2.loc.x < object1.loc.x)
+        size2x = object2.size.x;
+    if (object2.loc.y < object1.loc.y)
+        size2y = object2.size.y;
+
+    if (abs(object2.loc.x-tempx) < sizex && abs(object2.loc.y-object1.loc.y) < size2y) 
+        crash+=1;
+    if (abs(object2.loc.y-tempy) < sizey && abs(object2.loc.x-object1.loc.x) < size2x) 
+        crash+=2;
+    if (crash==0)
+    {
+        if (abs(object2.loc.x-tempx) < sizex && abs(object2.loc.y-tempy) < sizey) 
+            crash = rand()%2+1;
+
+    }
+    if (abs(object2.loc.x-object1.loc.x) < size2x && abs(object2.loc.y-object1.loc.y) < size2y) 
+        crash = 4;
+
+    return crash;
 }
 
 map::~map()
@@ -189,4 +209,3 @@ map::~map()
     levelFile.close();
     //delete [] characters;
 }
-

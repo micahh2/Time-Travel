@@ -142,7 +142,7 @@ class screen
                 }
                 //If the selection box is to be drawn
                 //Only start checking for selected things if the mouse has moved
-                else if (abs(event.button.x-eventx) >=7 || abs(event.button.y-eventy) >=7)
+                else if (abs(event.button.x-eventx) >=12 || abs(event.button.y-eventy) >= 12)
                 {
                     dragBox.on = true;
                     if (eventx > event.button.x)
@@ -242,8 +242,8 @@ class screen
                         {
                             if(objects->at(i).selected)
                             {
-                                objects->at(i).dest.x = event.button.x;
-                                objects->at(i).dest.y = event.button.y;
+                                objects->at(i).dest.x = event.button.x-objects->at(i).size.x/2;
+                                objects->at(i).dest.y = event.button.y-objects->at(i).size.y/2;
                             }
                         }
                     }
