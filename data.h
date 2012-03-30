@@ -62,7 +62,7 @@ class map
 
         map(string fileName);
         vector<character>* update(vector<character> *objects);
-        int collide(character object1, character object2, int tempx, int tempy);
+        collisionType collide(const character object1, const character object2, const dim test);
         ~map();
 
 };

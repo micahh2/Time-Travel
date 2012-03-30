@@ -269,19 +269,15 @@ int main() {
     bool game = true;
     map *currentMap = new map("filename.lev");
     int count = 1;
-    double tempo = 0;
+    //double tempo = 0;
     while (game)
     {
-        if (clock()>=tempo)
-        {
-            //FIXME
-            tempo = clock() ;//+ (1/(gameSpeed) * CLOCKS_PER_SEC;
-            game = frame.events(&objects); //Check for terminating events
-            currentMap->update(&objects); //Update char maps
-            if(abs(count%frameRate) == 0)
-                frame.update(&objects); //Update screen
-            count++;
-        }
+        //FIXME
+        game = frame.events(&objects); //Check for terminating events
+        currentMap->update(&objects); //Update char maps
+        if(count%frameRate == 0)
+            frame.update(&objects); //Update screen
+        count++;
         //repeat
     }
     delete currentMap;

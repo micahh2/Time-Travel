@@ -90,117 +90,102 @@ map::map(string filetype)
 
 vector<character>* map::update(vector<character> *objects)
 {
-    //Temp vars | DELETE
-    int pastNum = -1;
-    int pastTempx = -1;
-    int pastTempy = -1;
     for(unsigned int i = 0; i < objects->size(); i++)
     {
-
-        int colNum = 0;
-        int tempx = objects->at(i).loc.x;
-        int tempy = objects->at(i).loc.y; 
-        if (abs(objects->at(i).loc.x-objects->at(i).dest.x)>=1+(objects->at(i).speed/2))
+        dim loc;
+        loc.x = objects->at(i).loc.x;
+        loc.y = objects->at(i).loc.y;
+        dim dest;
+        dest.x = objects->at(i).dest.x;
+        dest.y = objects->at(i).dest.y;
+        int speedx = objects->at(i).speed;
+        int speedy = objects->at(i).speed;
+        //Find the proposed x and y
+        //Determine the speed factor
+        int factorx = ((dest.x-loc.x+1)/(abs(dest.x-loc.x)+1))*2-1;
+        int factory = ((dest.y-loc.y+1)/(abs(dest.y-loc.y)+1))*2-1;
+        if(abs(dest.x-loc.x)<speedx)
+            speedx = abs(dest.x-loc.x);
+        if(abs(dest.y-loc.y)<speedy)
+            speedy = abs(dest.y-loc.y);
+        dim temp;
+        temp.x = loc.x+(speedx*factorx);
+        temp.y = loc.y+(speedy*factory);
+        collisionType crash = neither;
+        if(!(objects->at(i).dest.x == loc.x && objects->at(i).loc.y == dest.y))
         {
-            if(objects->at(i).loc.x<objects->at(i).dest.x)
-                tempx+=objects->at(i).speed;
-            if(objects->at(i).loc.x>objects->at(i).dest.x)
-                tempx-=objects->at(i).speed;
-        }
-        if (abs(objects->at(i).loc.y-objects->at(i).dest.y)>=1+(objects->at(i).speed/2))
-        {
-            if(objects->at(i).loc.y<objects->at(i).dest.y)
-                tempy+=objects->at(i).speed;
-            if(objects->at(i).loc.y>objects->at(i).dest.y)
-                tempy-=objects->at(i).speed;
-        }
-        for(unsigned int j = 0; j < objects->size() && colNum !=3; j++)
-        {
-            if (objects->at(i).id != objects->at(j).id)
+            for(unsigned int j = 0; j < objects->size() && crash != both; j++)
             {
-                int temp = collide(objects->at(i), objects->at(j), tempx, tempy);
-                switch(temp)
+                if(j != i)
                 {
-                    case 1:
-                        if(colNum == 2)
-                        {
-                            colNum = 3;
-                            break;
-                        }
-                    case 2:
-                        if(colNum == 1)
-                        {
-                            colNum = 3;
-                            break;
-                        }
-                    case 3:
-                    case 0:
-                    default:
-                        colNum = temp;
-                }
-                if(temp == 4)
-                {
-                    cout << "BUGG!!" << endl;
-                    if(pastNum != -1)
+                    collisionType col = collide(objects->at(i), objects->at(j), temp);
+                    if (crash != both)
                     {
-                        cout << "The past num is: " << pastNum << endl;
-                        cout << "The past cordanates: " << pastTempx << ", " << pastTempy << endl << endl;
+                        if(col == xmove)
+                        {
+                            if(crash!=ymove)
+                                crash = xmove;
+                            else
+                                crash = both;
+                        }
+                        if(col == ymove)
+                        {
+                            if(crash!=xmove)
+                                crash = ymove;
+                            else
+                                crash = both;
+                        }
+                        if(col == both)
+                            crash = both;
                     }
                 }
-                //DELETE
-                pastNum = temp;
-                pastTempx = tempx;
-                pastTempy = tempy;
             }
+        if(crash != xmove && crash != both)
+           objects->at(i).loc.x = temp.x;
+        if(crash != ymove && crash != both)
+           objects->at(i).loc.y = temp.y;
         }
-        if(colNum == 1 || colNum == 0)
-            objects->at(i).loc.x = tempx;
-        if (colNum == 2 || colNum == 0)
-            objects->at(i).loc.y = tempy;
     }
     return objects;
 }
 
 //function collide
-//returns 0 if no collision
-//returns 1 if x collision
-//returns 2 if y collision
-//returns 3 if x and y collision
-//FIXME
-//Need an ENUM to make things more clear?
-int map::collide(const character object1, const character object2, const int tempx, const int tempy)
+collisionType map::collide(const character object1, const character object2, const dim test)
 {
-    int crash = 0;
+    dim size = object1.size;
+    dim size2 = object1.size;
+    collisionType crash = neither;
+    //If the x,y location of object2 is closer to the top corner than the proposed x,y values
+    if(object2.loc.x < test.x)
+        size.x = object2.size.x;
+    if(object2.loc.y < test.y)
+        size.y = object2.size.y;
+    //If the x,y location of object2 is closer to the top corner than the current x,y values
+    if(object2.loc.x < object1.loc.x)
+        size2.x = object2.size.x;
+    if(object2.loc.y < object1.loc.y)
+        size2.y = object2.size.y;
 
-    // Need to have more polite/smart blocks.
-    int sizex = object1.size.x;
-    int sizey = object1.size.y;
-    int size2x = object1.size.x;
-    int size2y = object1.size.y;
-
-    if (object2.loc.x < tempx)
-        sizex = object2.size.x;
-    if (object2.loc.y < tempy)
-        sizey = object2.size.y;
-
-    if (object2.loc.x < object1.loc.x)
-        size2x = object2.size.x;
-    if (object2.loc.y < object1.loc.y)
-        size2y = object2.size.y;
-
-    if (abs(object2.loc.x-tempx) < sizex && abs(object2.loc.y-object1.loc.y) < size2y) 
-        crash+=1;
-    if (abs(object2.loc.y-tempy) < sizey && abs(object2.loc.x-object1.loc.x) < size2x) 
-        crash+=2;
-    if (crash==0)
+    //Check collision using the proposed x value and the current y value
+    if((abs(object2.loc.x-test.x) < size.x && abs(object2.loc.y-object1.loc.y) < size2.y) || test.x < 0)
+            crash = xmove;
+    //Check collision using the proposed y value and the current x value
+    if((abs(object2.loc.x-object1.loc.x) < size2.x && abs(object2.loc.y-test.y) < size.y) || test.y < 0)
     {
-        if (abs(object2.loc.x-tempx) < sizex && abs(object2.loc.y-tempy) < sizey) 
-            crash = rand()%2+1;
-
+        if(crash == xmove || crash == both)
+            crash = both;
+        else 
+            crash = ymove;
     }
-    if (abs(object2.loc.x-object1.loc.x) < size2x && abs(object2.loc.y-object1.loc.y) < size2y) 
-        crash = 4;
-
+    //If both "moves" independantly work make sure that they work together
+    if(crash==neither)
+        if(abs(object2.loc.x-test.x) < size.x && abs(object2.loc.y-test.y)< size.y)
+        {
+            if(rand()%2 == 0) //Either xmove or ymove, I don't care
+                crash = ymove;
+            else
+                crash = xmove;
+        }
     return crash;
 }
 
