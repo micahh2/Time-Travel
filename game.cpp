@@ -13,8 +13,10 @@ int length;
 double rate;
 vector<character> objects;
 thing dragBox(0,0,0,0);
+thing camera(0,0,0,0);
 int frameRate;
 double gameSpeed;
+dim biggest;
 
 //Waits for you, so you don't have to!
 //Useless?
@@ -33,15 +35,30 @@ void init()
     frameRate = 6;
     //Need a better way...
     //gameSpeed = 999999999999;
-    for (int i =0; i<10; i++)
+    biggest.x = 0;
+    biggest.y = 0;
+    for (int i =0; i<900; i++)
     {
-        int tsize = rand()%30+20;
-        int hs = tsize/2;
-        objects.push_back(character(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+1));
+        int tsize = rand()%10+10;
+        int hs = tsize/2+1;
+        character temp(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+1);
+        for (unsigned int j = 0; j < objects.size(); j++)
+        { 
+            if (collide(temp, objects[j]))
+            {
+                temp = character(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+1);
+                j = 0;
+            }
+        }
+        objects.push_back(temp);
+        if(tsize + temp.speed > biggest.x)
+            biggest.x = tsize + temp.speed;
+        if(tsize + temp.speed > biggest.y)
+            biggest.y = tsize + temp.speed;
     }
 }
 
-//Its got the window in its hands...
+//Its got the whole window in its hands...
 class screen
 {
     private:
@@ -115,7 +132,7 @@ class screen
             for(unsigned int i = 0; i < objects->size(); i++)
             {
                 if (objects->at(i).selected)
-                    drawRect(objects->at(i).loc.x, objects->at(i).loc.y, objects->at(i).size.x, objects->at(i).size.y, 0, 190, 100);
+                    drawRect(objects->at(i).loc.x, objects->at(i).loc.y, objects->at(i).size.x, objects->at(i).size.y, 0, 255, 0);
                 else
                     drawRect(objects->at(i).loc.x, objects->at(i).loc.y, objects->at(i).size.x, objects->at(i).size.y, 255, 190, 10);
             }
@@ -224,19 +241,19 @@ class screen
                 {
                     bool clickedObj = false;
                     //Check if you are clicking on a character in the objects vector
-                    for(unsigned int i = 0; i < objects->size() && !clickedObj; i++)
-                    {
-                        if(event.button.x-objects->at(i).loc.x<=objects->at(i).size.x && event.button.x-objects->at(i).loc.x>=0)
-                            if (event.button.y-objects->at(i).loc.y<=objects->at(i).size.y && event.button.y-objects->at(i).loc.y>=0)
-                            {
-                                clickedObj = true;
-                                for(unsigned int j = 0; j < objects->size(); j++)
-                                    objects->at(j).selected = false;
-                                objects->at(i).selected = true;
-                            }
-                    }
                     if (!clickedObj && abs(event.button.x-eventx) <=3 && abs(event.button.y-eventy) <=3)
                     {
+                        for(unsigned int i = 0; i < objects->size() && !clickedObj; i++)
+                        {
+                            if(event.button.x-objects->at(i).loc.x<=objects->at(i).size.x && event.button.x-objects->at(i).loc.x>=0)
+                                if (event.button.y-objects->at(i).loc.y<=objects->at(i).size.y && event.button.y-objects->at(i).loc.y>=0)
+                                {
+                                    clickedObj = true;
+                                    for(unsigned int j = 0; j < objects->size(); j++)
+                                        objects->at(j).selected = false;
+                                    objects->at(i).selected = true;
+                                }
+                        }
                         //Sets the dest for all the selected objects
                         for(unsigned int i = 0; i < objects->size(); i++)
                         {
@@ -244,6 +261,14 @@ class screen
                             {
                                 objects->at(i).dest.x = event.button.x-objects->at(i).size.x/2;
                                 objects->at(i).dest.y = event.button.y-objects->at(i).size.y/2;
+                                if(objects->at(i).dest.x < 0)
+                                    objects->at(i).dest.x = 0;
+                                if(objects->at(i).dest.y < 0)
+                                    objects->at(i).dest.y = 0;
+                                if(objects->at(i).dest.x > width)
+                                    objects->at(i).dest.x = width;
+                                if(objects->at(i).dest.y > length)
+                                    objects->at(i).dest.y = length;
                             }
                         }
                     }
@@ -269,14 +294,22 @@ int main() {
     bool game = true;
     map *currentMap = new map("filename.lev");
     int count = 1;
-    //double tempo = 0;
+    double tempo = 0;
     while (game)
     {
         //FIXME
+        tempo = clock();
         game = frame.events(&objects); //Check for terminating events
-        currentMap->update(&objects); //Update char maps
+        cout << "Checking events took: " << clock()-tempo << endl;
+        tempo = clock();
+        currentMap->update(&objects, length, width, biggest); //Update char maps
+        cout << "Updating objects took: " << clock()-tempo << endl;
         if(count%frameRate == 0)
+        {
+            tempo = clock();
             frame.update(&objects); //Update screen
+            cout << "Drawing to the screen took: " << clock()-tempo << endl;
+        }
         count++;
         //repeat
     }

@@ -30,6 +30,7 @@ class thing
         int colId;
         dim loc;
         dim size;
+        dim region;
 
         void init(int locx, int locy, int insizex, int insizey);
         thing(int locx, int locy, int insizex, int insizey);
@@ -52,6 +53,9 @@ class character : public thing
         bool collision();
 };
 
+collisionType collide(const thing object1, const thing object2, const dim test);
+bool collide(const thing object1, const thing object2);
+
 class map
 {
     public:
@@ -61,8 +65,7 @@ class map
         fstream levelFile;
 
         map(string fileName);
-        vector<character>* update(vector<character> *objects);
-        collisionType collide(const character object1, const character object2, const dim test);
+        vector<character>* update(vector<character> *objects, int length, int width, dim biggest);
         ~map();
 
 };

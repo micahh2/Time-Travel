@@ -88,8 +88,14 @@ map::map(string filetype)
     }
 }
 
-vector<character>* map::update(vector<character> *objects)
+vector<character>* map::update(vector<character> *objects, int length, int width, dim biggest)
 {
+    for(unsigned int i = 0; i < objects->size(); i++)
+    {
+        objects->at(i).region.x = objects->at(i).loc.x/biggest.x;
+        objects->at(i).region.y = objects->at(i).loc.y/biggest.y;
+    }
+    int saved = 0;
     for(unsigned int i = 0; i < objects->size(); i++)
     {
         dim loc;
@@ -116,7 +122,9 @@ vector<character>* map::update(vector<character> *objects)
         {
             for(unsigned int j = 0; j < objects->size() && crash != both; j++)
             {
-                if(j != i)
+                dim region1 = objects->at(i).region;
+                dim region2 = objects->at(j).region;
+                if(j != i && abs(region1.x-region2.x) <= 1 && abs(region1.y-region2.y) <= 1)
                 {
                     collisionType col = collide(objects->at(i), objects->at(j), temp);
                     if (crash != both)
@@ -150,7 +158,7 @@ vector<character>* map::update(vector<character> *objects)
 }
 
 //function collide
-collisionType map::collide(const character object1, const character object2, const dim test)
+collisionType collide(const thing object1, const thing object2, const dim test)
 {
     dim size = object1.size;
     dim size2 = object1.size;
@@ -187,6 +195,14 @@ collisionType map::collide(const character object1, const character object2, con
                 crash = xmove;
         }
     return crash;
+}
+bool collide(const thing object1, const thing object2)
+{
+    //FIXME make effient 
+    collisionType col = collide(object1, object2, object1.loc);
+    if (col == neither)
+        return false;
+    return true;
 }
 
 map::~map()
