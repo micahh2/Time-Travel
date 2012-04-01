@@ -13,7 +13,7 @@ int length;
 double rate;
 vector<character> objects;
 thing dragBox(0,0,0,0);
-thing camera(0,0,0,0);
+thing camera(10,10,width,length);
 int frameRate;
 double gameSpeed;
 dim biggest;
@@ -134,7 +134,7 @@ class screen
                 if (objects->at(i).selected)
                     drawRect(objects->at(i).loc.x, objects->at(i).loc.y, objects->at(i).size.x, objects->at(i).size.y, 0, 255, 0);
                 else
-                    drawRect(objects->at(i).loc.x, objects->at(i).loc.y, objects->at(i).size.x, objects->at(i).size.y, 255, 190, 10);
+                    drawRect(objects->at(i).loc.x, objects->at(i).loc.y, objects->at(i).size.x, objects->at(i).size.y, 190, 0, 255);
             }
             if (dragBox.on)
             {
