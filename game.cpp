@@ -3,7 +3,6 @@
 #include <SDL/SDL.h>
 #include <time.h>
 #include "data.h"
-#include "aStar.cpp"
 #include <vector>
 
 using namespace std;
@@ -131,10 +130,20 @@ class screen
             drawRect(0, 0, width, length);
             for(unsigned int i = 0; i < objects->size(); i++)
             {
+                int r,g,b;
                 if (objects->at(i).selected)
-                    drawRect(objects->at(i).loc.x, objects->at(i).loc.y, objects->at(i).size.x, objects->at(i).size.y, 0, 255, 0);
+                {
+                    r=0;
+                    g=255;
+                    b=0;
+                }
                 else
-                    drawRect(objects->at(i).loc.x, objects->at(i).loc.y, objects->at(i).size.x, objects->at(i).size.y, 190, 0, 255);
+                {
+                    r=190;
+                    g=0;
+                    b=255;
+                }
+                drawRect(objects->at(i).loc.x, objects->at(i).loc.y, objects->at(i).size.x, objects->at(i).size.y, r, g, b);
             }
             if (dragBox.on)
             {
