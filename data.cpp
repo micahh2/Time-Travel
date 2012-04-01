@@ -95,7 +95,7 @@ vector<character>* map::update(vector<character> *objects, int length, int width
         objects->at(i).region.x = objects->at(i).loc.x/biggest.x;
         objects->at(i).region.y = objects->at(i).loc.y/biggest.y;
     }
-    int saved = 0;
+    //int saved = 0;
     for(unsigned int i = 0; i < objects->size(); i++)
     {
         dim loc;
