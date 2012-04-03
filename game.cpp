@@ -38,7 +38,7 @@ void init()
     biggest.y = 0;
     for (int i =0; i<900; i++)
     {
-        int tsize = rand()%10+10;
+        int tsize = rand()%10+1;
         int hs = tsize/2+1;
         character temp(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+1);
         for (unsigned int j = 0; j < objects.size(); j++)
@@ -66,6 +66,7 @@ class screen
         int eventx;
         int eventy;
         bool drag;
+		int selectedSize;
     public:
         screen()
         {
@@ -80,6 +81,7 @@ class screen
             //Event pos set
             eventx = 0;
             eventy = 0;
+			selectedSize = 0;
         }
         void draw(int x, int y, Uint32 color)
         {
@@ -164,7 +166,6 @@ class screen
                 {
                     eventx = event.button.x;
                     eventy = event.button.y;
-                    //cout << "I'm setting the down click at x:" << eventx << " y:" << eventy << endl;
                 }
                 //If the selection box is to be drawn
                 //Only start checking for selected things if the mouse has moved
@@ -193,45 +194,16 @@ class screen
                     }
                     for(unsigned int i = 0; i < objects->size(); i++)
                     {
-                        //The first one is the lowest y loc + the lowest x loc and the coresponding size values;
-                        //The second one is the other x and y loc ..
-                        thing comp1;
-                        thing comp2;
-                        if(objects->at(i).loc.x < dragBox.loc.x)
-                        {
-                            comp1.loc.x = objects->at(i).loc.x;
-                            comp1.size.x = objects->at(i).size.x;
-                            comp2.loc.x = dragBox.loc.x;
-                            comp2.size.x = dragBox.size.x;
-                        }
-                        else
-                        {
-                            comp1.loc.x = dragBox.loc.x;
-                            comp1.size.x = dragBox.size.x;
-                            comp2.loc.x = objects->at(i).loc.x;
-                            comp2.size.x = objects->at(i).size.x;
-                        }
-
-                        if(objects->at(i).loc.y < dragBox.loc.y)
-                        {
-                            comp1.loc.y = objects->at(i).loc.y;
-                            comp1.size.y = objects->at(i).size.y;
-                            comp2.loc.y = dragBox.loc.y;
-                            comp2.size.y = dragBox.size.y;
-                        }
-                        else
-                        {
-                            comp1.loc.y = dragBox.loc.y;
-                            comp1.size.y = dragBox.size.y;
-                            comp2.loc.y = objects->at(i).loc.y;
-                            comp2.size.y = objects->at(i).size.y;
-                        }
-                        if(abs(comp1.loc.x-comp2.loc.x)<=comp1.size.x && abs(comp1.loc.y-comp2.loc.y)<=comp1.size.y)
-                        {
-                            objects->at(i).selected = true;
-                        }
-                        else
-                            objects->at(i).selected = false;
+						if(collide(dragBox, objects->at(i)))
+						{
+							objects->at(i).selected = true;
+							selectedSize++;
+						}
+						else
+						{
+							selectedSize--;
+							objects->at(i).selected = false;
+						}
                     }
 
                 }
@@ -245,6 +217,7 @@ class screen
                 {
                     for(unsigned int i = 0; i < objects->size(); i++)
                         objects->at(i).selected=false;
+					selectedSize = 0;
                 }
                 else
                 {
@@ -254,74 +227,74 @@ class screen
                     {
                         for(unsigned int i = 0; i < objects->size() && !clickedObj; i++)
                         {
-                            if(event.button.x-objects->at(i).loc.x<=objects->at(i).size.x && event.button.x-objects->at(i).loc.x>=0)
-                                if (event.button.y-objects->at(i).loc.y<=objects->at(i).size.y && event.button.y-objects->at(i).loc.y>=0)
-                                {
-                                    clickedObj = true;
-                                    for(unsigned int j = 0; j < objects->size(); j++)
-                                        objects->at(j).selected = false;
-                                    objects->at(i).selected = true;
-                                }
-                        }
-                        //Sets the dest for all the selected objects
-                        for(unsigned int i = 0; i < objects->size(); i++)
-                        {
-                            if(objects->at(i).selected)
-                            {
-                                objects->at(i).dest.x = event.button.x-objects->at(i).size.x/2;
-                                objects->at(i).dest.y = event.button.y-objects->at(i).size.y/2;
-                                if(objects->at(i).dest.x < 0)
-                                    objects->at(i).dest.x = 0;
-                                if(objects->at(i).dest.y < 0)
-                                    objects->at(i).dest.y = 0;
-                                if(objects->at(i).dest.x > width)
-                                    objects->at(i).dest.x = width;
-                                if(objects->at(i).dest.y > length)
-                                    objects->at(i).dest.y = length;
-                            }
-                        }
-                    }
-                }
-            }
-            if (event.type == SDL_VIDEORESIZE)
-            {
-                width = event.resize.w;
-                length = event.resize.h;
-                mainframe = SDL_SetVideoMode(width, length, 16, SDL_SWSURFACE | SDL_RESIZABLE);
-                drawRect(0,0,width, length);
-            }
-            return true;
-        }
+							if(collide(character(event.button.x,event.button.y,1,1), objects->at(i)))
+							{
+								clickedObj = true;
+								for(unsigned int j = 0; j < objects->size(); j++)
+									objects->at(j).selected = false;
+								objects->at(i).selected = true;
+								selectedSize = 1;
+							}
+						}
+						//Sets the dest for all the selected objects
+						for(unsigned int i = 0; i < objects->size(); i++)
+						{
+							if(objects->at(i).selected)
+							{
+								objects->at(i).dest.x = event.button.x-objects->at(i).size.x/2;//+objects->at(i).loc.x/width*selectedSize;
+								objects->at(i).dest.y = event.button.y-objects->at(i).size.y/2;//+objects->at(i).loc.y/length*selectedSize;
+								if(objects->at(i).dest.x < 0)
+									objects->at(i).dest.x = 0;
+								if(objects->at(i).dest.y < 0)
+									objects->at(i).dest.y = 0;
+								if(objects->at(i).dest.x > width)
+									objects->at(i).dest.x = width;
+								if(objects->at(i).dest.y > length)
+									objects->at(i).dest.y = length;
+							}
+						}
+					}
+				}
+			}
+			if (event.type == SDL_VIDEORESIZE)
+			{
+				width = event.resize.w;
+				length = event.resize.h;
+				mainframe = SDL_SetVideoMode(width, length, 16, SDL_SWSURFACE | SDL_RESIZABLE);
+				drawRect(0,0,width, length);
+			}
+			return true;
+		}
 
 };
 
 int main() {
-    srand(time(NULL));
-    init();
-    cout << "Yo!";
-    screen frame;
-    bool game = true;
-    map *currentMap = new map("filename.lev");
-    int count = 1;
-    double tempo = 0;
-    while (game)
-    {
-        //FIXME
-        tempo = clock();
-        game = frame.events(&objects); //Check for terminating events
-        cout << "Checking events took: " << clock()-tempo << endl;
-        tempo = clock();
-        currentMap->update(&objects, length, width, biggest); //Update char maps
-        cout << "Updating objects took: " << clock()-tempo << endl;
-        if(count%frameRate == 0)
-        {
-            tempo = clock();
-            frame.update(&objects); //Update screen
-            cout << "Drawing to the screen took: " << clock()-tempo << endl;
-        }
-        count++;
-        //repeat
-    }
-    delete currentMap;
-    return 0;
+	srand(time(NULL));
+	init();
+	cout << "Yo!";
+	screen frame;
+	bool game = true;
+	map *currentMap = new map("filename.lev");
+	int count = 1;
+	double tempo = 0;
+	while (game)
+	{
+		//FIXME
+		tempo = clock();
+		game = frame.events(&objects); //Check for terminating events
+		cout << "Checking events took: " << clock()-tempo << endl;
+		tempo = clock();
+		currentMap->update(&objects, length, width, biggest); //Update char maps
+		cout << "Updating objects took: " << clock()-tempo << endl;
+		if(count%frameRate == 0)
+		{
+			tempo = clock();
+			frame.update(&objects); //Update screen
+			cout << "Drawing to the screen took: " << clock()-tempo << endl;
+		}
+		count++;
+		//repeat
+	}
+	delete currentMap;
+	return 0;
 }

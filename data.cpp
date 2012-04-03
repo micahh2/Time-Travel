@@ -18,27 +18,27 @@ void thing::init(int locx, int locy, int insizex, int insizey)
 {
     id = nextId;
 	nextId++;
-    colId = -1;
+	colId = -1;
 	colTry.x = 0;
 	colTry.y = 0;
-    loc.x = locx;
-    loc.y = locy;
-    size.x = insizex;
-    size.y = insizey;
+	loc.x = locx;
+	loc.y = locy;
+	size.x = insizex;
+	size.y = insizey;
 	updated = false;
 }
 thing::thing(int locx, int locy, int insizex, int insizey)
 {
-    init(locx, locy, insizex, insizey);
+	init(locx, locy, insizex, insizey);
 }
 thing::thing()
 {
-    init(0,0,0,0);
+	init(0,0,0,0);
 }
 bool thing::aStar()
 {
-    cout << "I'm not ready to A*!" << endl;
-    return true;
+	cout << "I'm not ready to A*!" << endl;
+	return true;
 }
 
 //.............
@@ -46,32 +46,32 @@ bool thing::aStar()
 //.............
 character::character(int locx, int locy, int insizex, int insizey, int inspeed) : thing(locx, locy, insizex, insizey)
 {
-    init(locx, locy, inspeed);
+	init(locx, locy, inspeed);
 }
 character::character(int locx, int locy, int insizex, int insizey) : thing(locx, locy, insizex, insizey)
 {
-    init(locx, locy, 10);
+	init(locx, locy, 10);
 }
 character::character(int locx, int locy) : thing(locx, locy, 5, 5)
 {
-    init(locx, locy, 10);
+	init(locx, locy, 10);
 }
 
 void character::init(int locx, int locy, int inspeed)
 {
-    id = nextId++;
-    dest.x = locx;
-    dest.y = locy;
-    speed = inspeed;
-    pause = false;
-    selected = true;
+	id = nextId++;
+	dest.x = locx;
+	dest.y = locy;
+	speed = inspeed;
+	pause = false;
+	selected = false;
 }
 
 
 bool character::collision()
 {
-    //aStar(id, dest);
-    return true;
+	//aStar(id, dest);
+	return true;
 }
 
 //.............
@@ -175,6 +175,7 @@ vector<character>* map::update(vector<character> *objects, int length, int width
 		if(abs(dest.y-loc.y)<speedy)
 			speedy = abs(dest.y-loc.y);
 		dim temp;
+		int retry = 0;
 		temp.x = loc.x+(speedx*factorx);
 		temp.y = loc.y+(speedy*factory);
 		collisionType crash = neither;
@@ -186,7 +187,7 @@ vector<character>* map::update(vector<character> *objects, int length, int width
 				dim region2 = objects->at(j).region;
 				if(j != i && abs(region1.x-region2.x) <= 1 && abs(region1.y-region2.y) <= 1)
 				{
-					if(!(objects->at(i).crash && !objects->at(idnums.get(objects->at(i).colId)).updated && objects->at(i).colTry.x == temp.x && objects->at(i).colTry.y == temp.y && rand()%4==0))
+					if(!objects->at(i).crash || (!objects->at(idnums.get(objects->at(i).colId)).updated && (objects->at(i).colTry.x != temp.x || objects->at(i).colTry.y != temp.y)))
 					{
 						collisionType col = collide(objects->at(i), objects->at(j), temp);
 						if (crash != both)
@@ -206,15 +207,22 @@ vector<character>* map::update(vector<character> *objects, int length, int width
 									crash = both;
 							}
 							if(col == both)
+							{
 								crash = both;
-							if(col != neither)
 								objects->at(i).colId = objects->at(j).id;
+							}
 						}
 					}
 					else
 					{
 						crash = both;
 						saved++;
+						retry = 1;
+						if(saved%(objects->size()/500+1)==0)
+						{
+							objects->at(i).updated = true;
+							objects->at(i).crash = false;
+						}
 					}
 				}
 			}
@@ -224,15 +232,21 @@ vector<character>* map::update(vector<character> *objects, int length, int width
 				objects->at(i).loc.y = temp.y;
 			if(crash == both)
 			{
-				objects->at(i).updated = false;
-				objects->at(i).crash = true;
-				objects->at(i).colTry.x = temp.x;
-				objects->at(i).colTry.y = temp.y;
+				if(retry != 1)
+				{
+					objects->at(i).updated = false;
+					objects->at(i).crash = true;
+					objects->at(i).colTry.x = temp.x;
+					objects->at(i).colTry.y = temp.y;
+				}
 			}
 			else
 			{
-				objects->at(i).updated = true;
-				objects->at(i).crash = false;
+				if(retry != 1)
+				{
+					objects->at(i).updated = true;
+					objects->at(i).crash = false;
+				}
 			}
 		}
 	}
