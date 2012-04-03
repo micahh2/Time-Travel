@@ -9,16 +9,23 @@
 using namespace std;
 
 
+//.............
+// thing class
+//.............
 int thing::nextId = 0;
 
 void thing::init(int locx, int locy, int insizex, int insizey)
 {
-    id = nextId++;
-    colId = 0;
+    id = nextId;
+	nextId++;
+    colId = -1;
+	colTry.x = 0;
+	colTry.y = 0;
     loc.x = locx;
     loc.y = locy;
     size.x = insizex;
     size.y = insizey;
+	updated = false;
 }
 thing::thing(int locx, int locy, int insizex, int insizey)
 {
@@ -34,6 +41,9 @@ bool thing::aStar()
     return true;
 }
 
+//.............
+// character class
+//.............
 character::character(int locx, int locy, int insizex, int insizey, int inspeed) : thing(locx, locy, insizex, insizey)
 {
     init(locx, locy, inspeed);
@@ -64,149 +74,222 @@ bool character::collision()
     return true;
 }
 
+//.............
+// idlist class
+//.............
+idlist::idlist(vector<character> *objects)
+{
+	init(objects);
+}
+void idlist::init(vector<character> *objects)
+{
+	list.resize(objects->size()+10,-1);
+	for(unsigned int i = 0; i < objects->size(); i++)
+	{
+		int size = list.size();
+		if(objects->at(i).id >= size)
+			list.resize(objects->at(i).id*1.5,-1);
+		list[objects->at(i).id] = i;
+	}
+}
+void idlist::update(vector<character> *objects)
+{
+	for(unsigned int i = 0; i < objects->size(); i++)
+	{
+		int size = list.size();
+		if(objects->at(i).id >= size)
+			list.resize(objects->at(i).id*1.5,-1);
+		list[objects->at(i).id] = i;
+	}
+}
+int idlist::get(int colNum)
+{
+	int size = list.size();
+	if(colNum>size)
+		cout << "Major bad goose goose." << endl << endl << endl;
+	int ans = list[colNum];
+	if(ans < 0)
+	{
+		for(unsigned int i = 0; i < list.size(); i++)
+		{
+			cout << i << " : " << list[i] << endl;
+		}
+		cout << "Really Bad goose goose.. " << colNum << endl;
+	}
+	return ans;
+}
+
+//.............
+// map class
+//.............
 map::map(string filetype)
 {
-    cout << "The end is near" << endl;
-    levelFile.open("level1.lev", fstream::in | fstream::out);
-    string tempData = "";
-    if (levelFile.good())
-    {
-        cout << "File loading... " << endl;
-        levelFile >> tempData;
-    }
-    if (tempData != "UNLEVELPARATT")
-        cout << "Thats not a real level file!!";
-    else
-    {
-        levelFile >> mapDim.x;
-        levelFile >> mapDim.y;
-        levelFile >> numChars;
-        if(levelFile.fail())
-        {
-            cout << "Bad level file, couldn't load basic info.";
-        }
-    }
+	cout << "The end is near" << endl;
+	levelFile.open("level1.lev", fstream::in | fstream::out);
+	string tempData = "";
+	if (levelFile.good())
+	{
+		cout << "File loading... " << endl;
+		levelFile >> tempData;
+	}
+	if (tempData != "UNLEVELPARATT")
+		cout << "Thats not a real level file!!";
+	else
+	{
+		levelFile >> mapDim.x;
+		levelFile >> mapDim.y;
+		levelFile >> numChars;
+		if(levelFile.fail())
+		{
+			cout << "Bad level file, couldn't load basic info.";
+		}
+	}
 }
 
 vector<character>* map::update(vector<character> *objects, int length, int width, dim biggest)
 {
-    for(unsigned int i = 0; i < objects->size(); i++)
-    {
-        objects->at(i).region.x = objects->at(i).loc.x/biggest.x;
-        objects->at(i).region.y = objects->at(i).loc.y/biggest.y;
-    }
-    //int saved = 0;
-    for(unsigned int i = 0; i < objects->size(); i++)
-    {
-        dim loc;
-        loc.x = objects->at(i).loc.x;
-        loc.y = objects->at(i).loc.y;
-        dim dest;
-        dest.x = objects->at(i).dest.x;
-        dest.y = objects->at(i).dest.y;
-        int speedx = objects->at(i).speed;
-        int speedy = objects->at(i).speed;
-        //Find the proposed x and y
-        //Determine the speed factor
-        int factorx = ((dest.x-loc.x+1)/(abs(dest.x-loc.x)+1))*2-1;
-        int factory = ((dest.y-loc.y+1)/(abs(dest.y-loc.y)+1))*2-1;
-        if(abs(dest.x-loc.x)<speedx)
-            speedx = abs(dest.x-loc.x);
-        if(abs(dest.y-loc.y)<speedy)
-            speedy = abs(dest.y-loc.y);
-        dim temp;
-        temp.x = loc.x+(speedx*factorx);
-        temp.y = loc.y+(speedy*factory);
-        collisionType crash = neither;
-        if(!(objects->at(i).dest.x == loc.x && objects->at(i).loc.y == dest.y))
-        {
-            for(unsigned int j = 0; j < objects->size() && crash != both; j++)
-            {
-                dim region1 = objects->at(i).region;
-                dim region2 = objects->at(j).region;
-                if(j != i && abs(region1.x-region2.x) <= 1 && abs(region1.y-region2.y) <= 1)
-                {
-                    collisionType col = collide(objects->at(i), objects->at(j), temp);
-                    if (crash != both)
-                    {
-                        if(col == xmove)
-                        {
-                            if(crash!=ymove)
-                                crash = xmove;
-                            else
-                                crash = both;
-                        }
-                        if(col == ymove)
-                        {
-                            if(crash!=xmove)
-                                crash = ymove;
-                            else
-                                crash = both;
-                        }
-                        if(col == both)
-                            crash = both;
-                    }
-                }
-            }
-        if(crash != xmove && crash != both)
-           objects->at(i).loc.x = temp.x;
-        if(crash != ymove && crash != both)
-           objects->at(i).loc.y = temp.y;
-        }
-    }
-    return objects;
+	idlist idnums(objects);
+	for(unsigned int i = 0; i < objects->size(); i++)
+	{
+		objects->at(i).region.x = objects->at(i).loc.x/biggest.x;
+		objects->at(i).region.y = objects->at(i).loc.y/biggest.y;
+		objects->at(i).updated = false;
+	}
+	int saved = 0;
+	for(unsigned int i = 0; i < objects->size(); i++)
+	{
+		dim loc;
+		loc.x = objects->at(i).loc.x;
+		loc.y = objects->at(i).loc.y;
+		dim dest;
+		dest.x = objects->at(i).dest.x;
+		dest.y = objects->at(i).dest.y;
+		int speedx = objects->at(i).speed;
+		int speedy = objects->at(i).speed;
+		//Find the proposed x and y
+		//Determine the speed factor
+		int factorx = ((dest.x-loc.x+1)/(abs(dest.x-loc.x)+1))*2-1;
+		int factory = ((dest.y-loc.y+1)/(abs(dest.y-loc.y)+1))*2-1;
+		if(abs(dest.x-loc.x)<speedx)
+			speedx = abs(dest.x-loc.x);
+		if(abs(dest.y-loc.y)<speedy)
+			speedy = abs(dest.y-loc.y);
+		dim temp;
+		temp.x = loc.x+(speedx*factorx);
+		temp.y = loc.y+(speedy*factory);
+		collisionType crash = neither;
+		if(!(objects->at(i).dest.x == loc.x && objects->at(i).loc.y == dest.y))
+		{
+			for(unsigned int j = 0; j < objects->size() && crash != both; j++)
+			{
+				dim region1 = objects->at(i).region;
+				dim region2 = objects->at(j).region;
+				if(j != i && abs(region1.x-region2.x) <= 1 && abs(region1.y-region2.y) <= 1)
+				{
+					if(!(objects->at(i).crash && !objects->at(idnums.get(objects->at(i).colId)).updated && objects->at(i).colTry.x == temp.x && objects->at(i).colTry.y == temp.y && rand()%4==0))
+					{
+						collisionType col = collide(objects->at(i), objects->at(j), temp);
+						if (crash != both)
+						{
+							if(col == xmove)
+							{
+								if(crash!=ymove)
+									crash = xmove;
+								else
+									crash = both;
+							}
+							if(col == ymove)
+							{
+								if(crash!=xmove)
+									crash = ymove;
+								else
+									crash = both;
+							}
+							if(col == both)
+								crash = both;
+							if(col != neither)
+								objects->at(i).colId = objects->at(j).id;
+						}
+					}
+					else
+					{
+						crash = both;
+						saved++;
+					}
+				}
+			}
+			if(crash != xmove && crash != both)
+				objects->at(i).loc.x = temp.x;
+			if(crash != ymove && crash != both)
+				objects->at(i).loc.y = temp.y;
+			if(crash == both)
+			{
+				objects->at(i).updated = false;
+				objects->at(i).crash = true;
+				objects->at(i).colTry.x = temp.x;
+				objects->at(i).colTry.y = temp.y;
+			}
+			else
+			{
+				objects->at(i).updated = true;
+				objects->at(i).crash = false;
+			}
+		}
+	}
+	cout << saved << endl;
+	return objects;
 }
 
 //function collide
 collisionType collide(const thing object1, const thing object2, const dim test)
 {
-    dim size = object1.size;
-    dim size2 = object1.size;
-    collisionType crash = neither;
-    //If the x,y location of object2 is closer to the top corner than the proposed x,y values
-    if(object2.loc.x < test.x)
-        size.x = object2.size.x;
-    if(object2.loc.y < test.y)
-        size.y = object2.size.y;
-    //If the x,y location of object2 is closer to the top corner than the current x,y values
-    if(object2.loc.x < object1.loc.x)
-        size2.x = object2.size.x;
-    if(object2.loc.y < object1.loc.y)
-        size2.y = object2.size.y;
+	dim size = object1.size;
+	dim size2 = object1.size;
+	collisionType crash = neither;
+	//If the x,y location of object2 is closer to the top corner than the proposed x,y values
+	if(object2.loc.x < test.x)
+		size.x = object2.size.x;
+	if(object2.loc.y < test.y)
+		size.y = object2.size.y;
+	//If the x,y location of object2 is closer to the top corner than the current x,y values
+	if(object2.loc.x < object1.loc.x)
+		size2.x = object2.size.x;
+	if(object2.loc.y < object1.loc.y)
+		size2.y = object2.size.y;
 
-    //Check collision using the proposed x value and the current y value
-    if((abs(object2.loc.x-test.x) < size.x && abs(object2.loc.y-object1.loc.y) < size2.y) || test.x < 0)
-            crash = xmove;
-    //Check collision using the proposed y value and the current x value
-    if((abs(object2.loc.x-object1.loc.x) < size2.x && abs(object2.loc.y-test.y) < size.y) || test.y < 0)
-    {
-        if(crash == xmove || crash == both)
-            crash = both;
-        else 
-            crash = ymove;
-    }
-    //If both "moves" independantly work make sure that they work together
-    if(crash==neither)
-        if(abs(object2.loc.x-test.x) < size.x && abs(object2.loc.y-test.y)< size.y)
-        {
-            if(rand()%2 == 0) //Either xmove or ymove, I don't care
-                crash = ymove;
-            else
-                crash = xmove;
-        }
-    return crash;
+	//Check collision using the proposed x value and the current y value
+	if((abs(object2.loc.x-test.x) < size.x && abs(object2.loc.y-object1.loc.y) < size2.y) || test.x < 0)
+		crash = xmove;
+	//Check collision using the proposed y value and the current x value
+	if((abs(object2.loc.x-object1.loc.x) < size2.x && abs(object2.loc.y-test.y) < size.y) || test.y < 0)
+	{
+		if(crash == xmove || crash == both)
+			crash = both;
+		else 
+			crash = ymove;
+	}
+	//If both "moves" independantly work make sure that they work together
+	if(crash==neither)
+		if(abs(object2.loc.x-test.x) < size.x && abs(object2.loc.y-test.y)< size.y)
+		{
+			if(rand()%2 == 0) //Either xmove or ymove, I don't care
+				crash = ymove;
+			else
+				crash = xmove;
+		}
+	return crash;
 }
 bool collide(const thing object1, const thing object2)
 {
-    //FIXME make effient 
-    collisionType col = collide(object1, object2, object1.loc);
-    if (col == neither)
-        return false;
-    return true;
+	//FIXME make effient 
+	collisionType col = collide(object1, object2, object1.loc);
+	if (col == neither)
+		return false;
+	return true;
 }
 
 map::~map()
 {
-    levelFile.close();
-    //delete [] characters;
+	levelFile.close();
+	//delete [] characters;
 }

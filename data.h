@@ -26,8 +26,11 @@ class thing
     public:
         static vector<thing> known;
         bool on;
+		bool updated;
+		bool crash;
         int id;
         int colId;
+		dim colTry;
         dim loc;
         dim size;
         dim region;
@@ -53,6 +56,7 @@ class character : public thing
         bool collision();
 };
 
+
 collisionType collide(const thing object1, const thing object2, const dim test);
 bool collide(const thing object1, const thing object2);
 
@@ -68,6 +72,17 @@ class map
         vector<character>* update(vector<character> *objects, int length, int width, dim biggest);
         ~map();
 
+};
+
+class idlist
+{
+	private:
+		vector<int> list;
+	public:
+		void init(vector<character> *objects);
+		idlist(vector<character> *objects);
+		int get(int colNum);
+		void update(vector<character> *objects);
 };
 
 #endif
