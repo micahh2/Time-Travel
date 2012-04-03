@@ -5,6 +5,7 @@
 #include "data.h"
 #include <vector>
 #include <stdlib.h>
+#include <cmath>
 
 using namespace std;
 
@@ -271,6 +272,9 @@ collisionType collide(const thing object1, const thing object2, const dim test)
 	if(object2.loc.y < object1.loc.y)
 		size2.y = object2.size.y;
 
+		//cout << "Okay..." << endl;
+	if((pow(test.x-object2.loc.x, 2) + pow(test.y-object2.loc.y, 2)) <= (pow(size.x, 2) + pow(size.y, 2) + 3))
+	{
 	//Check collision using the proposed x value and the current y value
 	if((abs(object2.loc.x-test.x) < size.x && abs(object2.loc.y-object1.loc.y) < size2.y) || test.x < 0)
 		crash = xmove;
@@ -291,6 +295,9 @@ collisionType collide(const thing object1, const thing object2, const dim test)
 			else
 				crash = xmove;
 		}
+	}
+	if(abs(object2.loc.x-test.x) < size.x && abs(object2.loc.y-test.y)< size.y && crash == neither)
+		cout << "Help!!" << endl;
 	return crash;
 }
 bool collide(const thing object1, const thing object2)
