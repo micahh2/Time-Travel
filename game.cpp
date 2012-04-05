@@ -28,24 +28,24 @@ void wait(double seconds)
 //Initializes all of the global variables
 void init()
 {
-	width = 1100;
-	length = 700;
+	width = 3100;
+	length = 2700;
 	frameRate = 6;
 	//Need a better way...
 	//gameSpeed = 999999999999;
 	biggest.x = 0;
 	biggest.y = 0;
-	for (int i =0; i<700; i++)
+	for (int i =0; i<400; i++)
 	{
-		int tsize = rand()%10+1;
+		int tsize = rand()%30+30;
 		int hs = tsize/2+1;
-		character temp(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+1);
+		character temp(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+2);
 		for (unsigned int j = 0; j < objects.size(); j++)
 		{ 
 			if (collide(temp, objects[j]))
 			{
-				temp = character(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+1);
-				j = 0;
+				temp = character(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+2);
+				j = -1;
 			}
 		}
 		objects.push_back(temp);
@@ -66,18 +66,20 @@ class screen
 		int eventy;
 		bool drag;
 		int selectedSize;
+		thing actualDrag;
+		vector<SDL_Event> keyEvents;
 	public:
 		thing camera;
 		screen()
 		{
-			camera = thing(10,10,width-100,length-100);
+			camera = thing(width/2,length/2,1100,700);
+			actualDrag = thing(0,0,0,0);
 			if (SDL_Init(SDL_INIT_VIDEO) < 0) 
 			{
 				cout << "ERROR!!" << SDL_GetError() <<  endl;
 			}
 			else
 				mainframe = SDL_SetVideoMode(camera.size.x, camera.size.y, 16, SDL_SWSURFACE | SDL_RESIZABLE);
-			drawRect(0, 0, width, length);
 			drag = false;
 			//Event pos set
 			eventx = 0;
@@ -166,7 +168,6 @@ class screen
 					if(loc.y+size.y>camera.size.y)
 						size.y = camera.size.y - loc.y;
 
-
 					drawRect(loc.x, loc.y, size.x, size.y, r, g, b);
 				}
 			}
@@ -215,9 +216,12 @@ class screen
 						dragBox.size.y = event.button.y - eventy;
 						dragBox.loc.y = eventy;
 					}
+					actualDrag = dragBox;
+					actualDrag.loc.x = dragBox.loc.x + camera.loc.x;
+					actualDrag.loc.y = dragBox.loc.y + camera.loc.y;
 					for(unsigned int i = 0; i < objects->size(); i++)
 					{
-						if(collide(dragBox, objects->at(i)))
+						if(collide(actualDrag, objects->at(i)))
 						{
 							objects->at(i).selected = true;
 							selectedSize++;
@@ -246,11 +250,11 @@ class screen
 				{
 					bool clickedObj = false;
 					//Check if you are clicking on a character in the objects vector
-					if (!clickedObj && abs(event.button.x-eventx) <=3 && abs(event.button.y-eventy) <=3)
+					if (abs(event.button.x-eventx) <=3 && abs(event.button.y-eventy) <=3)
 					{
 						for(unsigned int i = 0; i < objects->size() && !clickedObj; i++)
 						{
-							if(collide(character(event.button.x,event.button.y,1,1), objects->at(i)))
+							if(collide(character(event.button.x+camera.loc.x,event.button.y+camera.loc.y,1,1), objects->at(i)))
 							{
 								clickedObj = true;
 								for(unsigned int j = 0; j < objects->size(); j++)
@@ -259,13 +263,15 @@ class screen
 								selectedSize = 1;
 							}
 						}
+						if(!clickedObj)
+						{
 						//Sets the dest for all the selected objects
 						for(unsigned int i = 0; i < objects->size(); i++)
 						{
 							if(objects->at(i).selected)
 							{
-								objects->at(i).dest.x = event.button.x-objects->at(i).size.x/2;//+objects->at(i).loc.x/width*selectedSize;
-								objects->at(i).dest.y = event.button.y-objects->at(i).size.y/2;//+objects->at(i).loc.y/length*selectedSize;
+								objects->at(i).dest.x = event.button.x-objects->at(i).size.x/2 + camera.loc.x;//+objects->at(i).loc.x/width*selectedSize;
+								objects->at(i).dest.y = event.button.y-objects->at(i).size.y/2 + camera.loc.y;//+objects->at(i).loc.y/length*selectedSize;
 								if(objects->at(i).dest.x < 0)
 									objects->at(i).dest.x = 0;
 								if(objects->at(i).dest.y < 0)
@@ -275,6 +281,7 @@ class screen
 								if(objects->at(i).dest.y > length)
 									objects->at(i).dest.y = length;
 							}
+						}
 						}
 					}
 				}
@@ -286,27 +293,57 @@ class screen
 				mainframe = SDL_SetVideoMode(camera.size.x, camera.size.y, 16, SDL_SWSURFACE | SDL_RESIZABLE);
 				//drawRect(0,0,width, length);
 			}
-			if(event.type != SDL_KEYUP)
+			if(event.type == SDL_KEYUP);
 			{
-				if(event.key.keysym.sym == SDLK_UP)
+				for(unsigned int i =0; i <keyEvents.size(); i++)
+					if(keyEvents[i].key.keysym.sym == event.key.keysym.sym)
+					{
+						cout << "Deleting!" << endl;
+						keyEvents.erase(keyEvents.begin()+i);
+					}
+			}
+			if(event.type == SDL_KEYDOWN)
+			{
+				cout << "Size: " << keyEvents.size() << endl;
+				bool found = false;
+				do
 				{
-					if(camera.loc.y>0)
-						camera.loc.y--;
+				for(unsigned int i =0; i < keyEvents.size() && !found; i++)
+					if(keyEvents[i].key.keysym.sym == event.key.keysym.sym)
+						found = true;
+
+				if(!found)
+				{
+					keyEvents.push_back(event);
+					cout << "Adding the key!" << endl;
 				}
-				if(event.key.keysym.sym == SDLK_DOWN)
+				else
+					cout << "Pressed!" << endl;
+				}while(found==false);
+
+			}
+			for(unsigned int i =0; i < keyEvents.size(); i++)
+			{
+				//cout << "Thats the key!" << endl;
+				if(keyEvents[i].key.keysym.sym == SDLK_UP)
 				{
-					if(camera.loc.y+camera.size.y<length)
-						camera.loc.y++;
+					if(camera.loc.y>5)
+						camera.loc.y-=5;
 				}
-				if(event.key.keysym.sym == SDLK_LEFT)
+				if(keyEvents[i].key.keysym.sym == SDLK_DOWN)
 				{
-					if(camera.loc.x>0)
-						camera.loc.x--;
+					if(camera.loc.y+camera.size.y<length-5)
+						camera.loc.y+=5;
 				}
-				if(event.key.keysym.sym == SDLK_RIGHT)
+				if(keyEvents[i].key.keysym.sym == SDLK_LEFT)
 				{
-					if(camera.loc.x+camera.size.x<width)
-						camera.loc.x++;
+					if(camera.loc.x>5)
+						camera.loc.x-=5;
+				}
+				if(keyEvents[i].key.keysym.sym == SDLK_RIGHT)
+				{
+					if(camera.loc.x+camera.size.x<width-5)
+						camera.loc.x+=5;
 				}
 			}
 			return true;

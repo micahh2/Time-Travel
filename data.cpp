@@ -273,7 +273,7 @@ collisionType collide(const thing object1, const thing object2, const dim test)
 		size2.y = object2.size.y;
 
 		//cout << "Okay..." << endl;
-	if((pow(test.x-object2.loc.x, 2) + pow(test.y-object2.loc.y, 2)) <= (pow(size.x, 2) + pow(size.y, 2) + 3))
+	if((pow((test.x+object1.size.x/2)-(object2.loc.x+object2.size.x/2), 2) + pow((test.y+object1.size.y/2)-(object2.loc.y+object2.size.y/2), 2)) <= (pow(object1.size.x, 2) + pow(object1.size.y, 2)/4)+(pow(object2.size.x, 2) + pow(object2.size.y, 2)/4))
 	{
 	//Check collision using the proposed x value and the current y value
 	if((abs(object2.loc.x-test.x) < size.x && abs(object2.loc.y-object1.loc.y) < size2.y) || test.x < 0)
