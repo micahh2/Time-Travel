@@ -105,7 +105,7 @@ int idlist::get(int colNum)
 		{
 			cout << i << " : " << list[i] << endl;
 		}
-		cout << "Really Bad goose goose.. " << colNum << endl;
+		cout << "Really bad goose goose.. " << colNum << endl;
 	}
 	return ans;
 }
@@ -142,7 +142,7 @@ map::map(string filetype)
 		int hs = tsize/2+1;
 		hatType hat;
 		int team = 0;
-		if(rand()%30==0)
+		if(99==i)
 			team=1;
 		if(team==0)
 		{
@@ -181,6 +181,7 @@ vector<character>* map::update()
 		objects.at(i).updated = false;
 	}
 	int saved = 0;
+	int wasted = 0;
 	for(unsigned int i = 0; i < objects.size(); i++)
 	{
 		if(!objects[i].atRest())
@@ -218,11 +219,11 @@ vector<character>* map::update()
 			temp.x = loc.x+(speedx*factorx);
 			temp.y = loc.y+(speedy*factory);
 			collisionType crash = neither;
-			for(unsigned int j = 0; j < objects.size() && crash != both; j++)
+			dim region1 = objects.at(i).region;
+			for(unsigned int j = 0; j < objects.size() && (crash != both || true); j++)
 			{
-				dim region1 = objects.at(i).region;
 				dim region2 = objects.at(j).region;
-				if(j != i && abs(region1.x-region2.x) <= 1 && abs(region1.y-region2.y) <= 1)
+				if(abs(region1.x-region2.x) <= 1 && abs(region1.y-region2.y) <= 1 && j!=i)
 				{
 					if(!objects.at(i).crash || (!objects.at(idnums.get(objects.at(i).colId)).updated && (objects.at(i).colTry.x != temp.x || objects.at(i).colTry.y != temp.y)))
 					{
@@ -250,6 +251,8 @@ vector<character>* map::update()
 							}
 							if(col != neither)
 								objects.at(i).colIds.push_back(objects.at(j).id);
+							else
+								wasted++;
 						}
 					}
 					else
@@ -257,7 +260,7 @@ vector<character>* map::update()
 						crash = both;
 						saved++;
 						retry = 1;
-						if(saved%(objects.size()/500+1)==0)
+						if(saved%(objects.size()/5+1)==0 &&false)
 						{
 							objects.at(i).updated = true;
 							objects.at(i).crash = false;
@@ -289,16 +292,17 @@ vector<character>* map::update()
 			}
 		}
 	}
-	cout << saved << endl;
+	cout << "Wasted: " << wasted << endl;
+	double et = clock();
 	for(unsigned int i = 0; i < enemies.size(); i++)
 	{
 		enemies[i].update(&objects, length, width);
-		
 	}
+	cout << "Time to update enemies: " << clock()-et << endl;
 	return &objects;
 }
 
-//function collide
+//Global function collide
 collisionType collide(const thing object1, const thing object2, const dim test)
 {
 	collisionType crash = neither;
@@ -372,7 +376,7 @@ bool enemy::update(vector<character> *objects, int length, int width)
 
 		if(objects->at(i).teamId == teamId)
 		{
-			if(objects->at(i).atRest())
+			if(objects->at(i).atRest() || rand()%100==0)
 			{
 				objects->at(i).dest.x = rand()%(width-10) + 5;
 				objects->at(i).dest.y = rand()%(length-10) + 5;
@@ -384,27 +388,25 @@ bool enemy::update(vector<character> *objects, int length, int width)
 			character *hit  = &(objects->at(table.get(objects->at(i).colIds.at(j))));
 			if(objects->at(i).type==red || hit->type==red)
 			{
-			//cout << "DIE!!! " << hit->type << endl;
-			if(objects->at(i).type==red)
-			{
-				if(hit->type==green)
+				if(objects->at(i).type==red)
 				{
-					//cout << "Stupid GREEN!!" << endl;
-					hit->teamId = teamId;
-					hit->type = red;
+					if(hit->type==green)
+					{
+						hit->teamId = teamId;
+						hit->type = red;
+					}
 				}
-			}
-			if(hit->type==red)
-			{
-				if(objects->at(i).type==green)
+				if(hit->type==red)
 				{
-					objects->at(i).teamId = teamId;
-					objects->at(i).type = red;
+					if(objects->at(i).type==green)
+					{
+						objects->at(i).teamId = teamId;
+						objects->at(i).type = red;
+					}
 				}
-			}
 			}
 		}
-		objects->at(i).colIds.empty();
+		objects->at(i).colIds.clear();
 	}
 	return true;
 }

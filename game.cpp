@@ -51,7 +51,6 @@ class screen
 			loadedImage = IMG_Load(filename.c_str());
 			if(loadedImage != NULL)
 			{
-				cout << "HEY" << endl;
 				loadedImage = SDL_DisplayFormatAlpha(loadedImage);
 				if(loadedImage != NULL)
 				{
@@ -321,13 +320,11 @@ class screen
 				for(unsigned int i =0; i <keyEvents.size(); i++)
 					if(keyEvents[i].key.keysym.sym == event.key.keysym.sym)
 					{
-						cout << "Deleting!" << endl;
 						keyEvents.erase(keyEvents.begin()+i);
 					}
 			}
 			if(event.type == SDL_KEYDOWN)
 			{
-				cout << "Size: " << keyEvents.size() << endl;
 				bool found = false;
 				do
 				{
@@ -338,10 +335,7 @@ class screen
 				if(!found)
 				{
 					keyEvents.push_back(event);
-					cout << "Adding the key!" << endl;
 				}
-				else
-					cout << "Pressed!" << endl;
 				}while(found==false);
 
 			}
