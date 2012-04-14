@@ -144,13 +144,19 @@ map::map(string filetype)
 		int team = 0;
 		if(99==i)
 			team=1;
+		if(i<30)
+		{
+			team=2;
+			tsize=80;
+			hat = rock;
+		}
 		if(team==0)
 		{
 			hat = green;
 			if(rand()%5==0)
 				hat = blue;
 		}
-		else
+		if(team==1)
 			hat = red;
 		
 		character temp(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+2, team, hat);

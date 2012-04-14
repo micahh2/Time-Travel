@@ -22,7 +22,8 @@ enum hatType
 	green,
 	blue,
 	red,
-	purple
+	purple,
+	rock
 };
 
 //Character inherits from thing

@@ -84,6 +84,7 @@ class screen
 			images.push_back(loadImage("img/purplehat.png"));
 			images.push_back(loadImage("img/purplehat2.png"));
 			images.push_back(loadImage("img/redhat.png"));
+			images.push_back(loadImage("img/rock.png"));
 			drag = false;
 			//Event pos set
 			eventx = 0;
@@ -166,15 +167,17 @@ class screen
 
 					int index = 0;
 					if (objects->at(i).type == green)
-						index = 0;
+						index = 1;
 					if (objects->at(i).type == blue)
-						index = 2;
+						index = 3;
 					if (objects->at(i).type == purple)
-						index = 4;
+						index = 5;
 					if (objects->at(i).selected)
-						index++;
+						index--;
 					if (objects->at(i).type == red)
 						index = 6;
+					if (objects->at(i).type == rock)
+						index = 7;
 					
 					SDL_BlitSurface(images[index], NULL, mainframe, &square);
 				}
