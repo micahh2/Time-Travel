@@ -1,5 +1,5 @@
 #Time Travel
-A simple attempt to create a fun open source RTS.
+A simple attempt to create a fun and open source RTS.
 
 ##Compiling
 * You will need SDL installed
@@ -9,7 +9,7 @@ A simple attempt to create a fun open source RTS.
 * 	Then run: './game'
 
 ##Controls
-* Use the mouse to click and the boxes will follow you.
+* Use the mouse to click and the circles will follow you.
 * You can drag the mouse to make a pretty blue box.
 * Press the arrow keys to scroll around the map.
 

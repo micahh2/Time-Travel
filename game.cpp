@@ -1,91 +1,97 @@
 #include <iostream>
 #include <fstream>
 #include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
 #include <time.h>
 #include "data.h"
 #include <vector>
 
 using namespace std;
 
-int width;
-int length;
+//Global Variables defined here
 double rate;
-vector<character> objects;
 thing dragBox(0,0,0,0);
 int frameRate;
 double gameSpeed;
-dim biggest;
-
-//Waits for you, so you don't have to!
-//Useless?
-void wait(double seconds)
-{
-	double doneTime;
-	doneTime = clock() + seconds * CLOCKS_PER_SEC;
-	while (clock() < doneTime);
-}
+map *currentMap;
 
 //Initializes all of the global variables
+//It's called at the begining of main
 void init()
 {
-	width = 3100;
-	length = 2700;
+	//width = 3100;
+	//length = 2700;
 	frameRate = 6;
 	//Need a better way...
 	//gameSpeed = 999999999999;
-	biggest.x = 0;
-	biggest.y = 0;
-	for (int i =0; i<400; i++)
-	{
-		int tsize = rand()%30+30;
-		int hs = tsize/2+1;
-		character temp(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+2);
-		for (unsigned int j = 0; j < objects.size(); j++)
-		{ 
-			if (collide(temp, objects[j]))
-			{
-				temp = character(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+2);
-				j = -1;
-			}
-		}
-		objects.push_back(temp);
-		if(tsize + temp.speed > biggest.x)
-			biggest.x = tsize + temp.speed;
-		if(tsize + temp.speed > biggest.y)
-			biggest.y = tsize + temp.speed;
-	}
 }
 
-//Its got the whole window in its hands...
+//It's got the whole window in its hands...
+//It deals with drawing to the screen and
+//handeling events
+//It relies on "objects" being passed in
 class screen
 {
 	private:
 		SDL_Surface *mainframe;
 		SDL_Event event;
+		vector<SDL_Surface*> images;
 		int eventx;
 		int eventy;
 		bool drag;
 		int selectedSize;
 		thing actualDrag;
 		vector<SDL_Event> keyEvents;
+
+		//The code for loading images into surfaces, mostly
+		//used to but them in the "images" vector.
+		SDL_Surface* loadImage(string filename)
+		{
+			SDL_Surface* loadedImage = NULL;
+			loadedImage = IMG_Load(filename.c_str());
+			if(loadedImage != NULL)
+			{
+				cout << "HEY" << endl;
+				loadedImage = SDL_DisplayFormatAlpha(loadedImage);
+				if(loadedImage != NULL)
+				{
+					SDL_SetColorKey(loadedImage, SDL_RLEACCEL | SDL_SRCCOLORKEY, SDL_MapRGB(loadedImage->format, 0, 0xFF, 0xFF));
+				}
+
+			}
+			return loadedImage;
+		}
+
 	public:
-		thing camera;
+		thing camera; //Very important keeps
+					  //size of the viewing window and
+					  //the off-set/position of the camera
+		//Initializes everthing for the screen class
 		screen()
 		{
-			camera = thing(width/2,length/2,1100,700);
+			camera = thing(0,0,1100,700);
 			actualDrag = thing(0,0,0,0);
 			if (SDL_Init(SDL_INIT_VIDEO) < 0) 
 			{
-				cout << "ERROR!!" << SDL_GetError() <<  endl;
+				cout << "ERROR!! " << SDL_GetError() <<  endl;
 			}
 			else
 				mainframe = SDL_SetVideoMode(camera.size.x, camera.size.y, 16, SDL_SWSURFACE | SDL_RESIZABLE);
+
+			images.push_back(loadImage("img/greenhat.png"));
+			images.push_back(loadImage("img/greenhat2.png"));
+			images.push_back(loadImage("img/bluehat.png"));
+			images.push_back(loadImage("img/bluehat2.png"));
+			images.push_back(loadImage("img/purplehat.png"));
+			images.push_back(loadImage("img/purplehat2.png"));
+			images.push_back(loadImage("img/redhat.png"));
 			drag = false;
 			//Event pos set
 			eventx = 0;
 			eventy = 0;
 			selectedSize = 0;
 		}
+		//Very basic draw, just draws a pixle at position x,y with the "color"
 		void draw(int x, int y, Uint32 color)
 		{
 			if (SDL_MUSTLOCK(mainframe))
@@ -98,7 +104,9 @@ class screen
 			if (SDL_MUSTLOCK(mainframe))
 				SDL_UnlockSurface(mainframe);
 		}
-		void drawRect(int x, int y, int w, int l, int r, int g, int b)
+		//Used for drawing rectangles, relies on the draw function
+		//If no r,g,b values are given it draws white.
+		void drawRect(int x, int y, int w, int l, int r=255, int g=255, int b=255)
 		{
 			Uint32 color = SDL_MapRGB(mainframe->format, r, g, b);
 			int x2 = x;
@@ -114,71 +122,76 @@ class screen
 				x2++;
 			}
 		}
-		void drawRect(int x, int y, int w, int l)
-		{
-			drawRect(x,y,w,l,255,255,255);
-		}
 
+		//The death of a screen is always a sad time
+		//But it mostly just involves freeing up all of the
+		//SDL_Surface (s)
 		bool die()
 		{
+			for(unsigned int i = 0; i < images.size(); i++)
+			{
+				SDL_FreeSurface(images[i]);
+				images.erase(images.begin()+i);
+			}
 			SDL_FreeSurface(mainframe);
 			SDL_Quit();
 			return true;
 		}
+
+		//The deconstructor, it calls die()
+		//I might move every thing back to here
+		//and get rid of the die() function
 		~screen()
 		{
 			die();
 		}
+		//Update() is where the magic happens,
+		//It Draws everything to the screen
 		void update(vector<character> *objects)
 		{
 			drawRect(0, 0, camera.size.x, camera.size.y);
+			//drawRect(loc.x, loc.y, size.x, size.y, r, g, b);
+			SDL_Rect square;
+			//SDL_Rect* clip = NULL;
 			for(unsigned int i = 0; i < objects->size(); i++)
 			{
 				if(collide(camera, objects->at(i)))
 				{
-					int r,g,b;
-					if (objects->at(i).selected)
-					{
-						r=0;
-						g=255;
-						b=0;
-					}
-					else
-					{
-						r=190;
-						g=0;
-						b=255;
-					}
-					dim size = objects->at(i).size;;
+					//dim size = objects->at(i).size;;
 					dim loc = objects->at(i).loc;
 					loc.x-=camera.loc.x;
 					loc.y-=camera.loc.y;
-					if(loc.x<0)
-					{
-						size.x += loc.x;
-						loc.x = 0;
-					}
-					if(loc.y<0)
-					{
-						size.y += loc.y;
-						loc.y = 0;
-					}
-					if(loc.x+size.x>camera.size.x)
-						size.x = camera.size.x - loc.x;
-					if(loc.y+size.y>camera.size.y)
-						size.y = camera.size.y - loc.y;
 
-					drawRect(loc.x, loc.y, size.x, size.y, r, g, b);
+					square.x = loc.x;
+					square.y = loc.y;
+
+					int index = 0;
+					if (objects->at(i).type == green)
+						index = 0;
+					if (objects->at(i).type == blue)
+						index = 2;
+					if (objects->at(i).type == purple)
+						index = 4;
+					if (objects->at(i).selected)
+						index++;
+					if (objects->at(i).type == red)
+						index = 6;
+					
+					SDL_BlitSurface(images[index], NULL, mainframe, &square);
 				}
 			}
 			if (dragBox.on)
-			{
 				drawRect(dragBox.loc.x, dragBox.loc.y, dragBox.size.x, dragBox.size.y, 0, 255, 255);
-			}
+
 			SDL_Flip(mainframe);
+
 			return;
 		}
 
+		//This needs a rewrite as it can be quite confusing
+		//to try and follow
+		//But it handles all of the input from SDL and returns true to keep the game going
+		//or false if the "X" button has been pressed
 		bool events(vector<character> *objects)
 		{
 			SDL_PollEvent(&event);
@@ -243,7 +256,8 @@ class screen
 				if (event.button.button == SDL_BUTTON_RIGHT)
 				{
 					for(unsigned int i = 0; i < objects->size(); i++)
-						objects->at(i).selected=false;
+						if(objects->at(i).teamId == 0)
+							objects->at(i).selected=false;
 					selectedSize = 0;
 				}
 				else
@@ -258,8 +272,10 @@ class screen
 							{
 								clickedObj = true;
 								for(unsigned int j = 0; j < objects->size(); j++)
-									objects->at(j).selected = false;
-								objects->at(i).selected = true;
+									if(objects->at(i).teamId == 0)
+										objects->at(j).selected = false;
+								if(objects->at(i).teamId == 0)
+									objects->at(i).selected = true;
 								selectedSize = 1;
 							}
 						}
@@ -268,24 +284,28 @@ class screen
 						//Sets the dest for all the selected objects
 						for(unsigned int i = 0; i < objects->size(); i++)
 						{
+						if(objects->at(i).teamId == 0)
+						{
 							if(objects->at(i).selected)
 							{
-								objects->at(i).dest.x = event.button.x-objects->at(i).size.x/2 + camera.loc.x;//+objects->at(i).loc.x/width*selectedSize;
-								objects->at(i).dest.y = event.button.y-objects->at(i).size.y/2 + camera.loc.y;//+objects->at(i).loc.y/length*selectedSize;
+								objects->at(i).dest.x = event.button.x-objects->at(i).size.x/2 + camera.loc.x;
+								objects->at(i).dest.y = event.button.y-objects->at(i).size.y/2 + camera.loc.y;
 								if(objects->at(i).dest.x < 0)
 									objects->at(i).dest.x = 0;
 								if(objects->at(i).dest.y < 0)
 									objects->at(i).dest.y = 0;
-								if(objects->at(i).dest.x > width)
-									objects->at(i).dest.x = width;
-								if(objects->at(i).dest.y > length)
-									objects->at(i).dest.y = length;
+								if(objects->at(i).dest.x > currentMap->width)
+									objects->at(i).dest.x = currentMap->width-objects->at(i).size.x;
+								if(objects->at(i).dest.y > currentMap->length)
+									objects->at(i).dest.y = currentMap->length-objects->at(i).size.y;
 							}
+						}
 						}
 						}
 					}
 				}
 			}
+			//When the screen is being resized
 			if (event.type == SDL_VIDEORESIZE)
 			{
 				camera.size.x = event.resize.w;
@@ -293,6 +313,9 @@ class screen
 				mainframe = SDL_SetVideoMode(camera.size.x, camera.size.y, 16, SDL_SWSURFACE | SDL_RESIZABLE);
 				//drawRect(0,0,width, length);
 			}
+			//From here down we deal with the arrow keys
+			//The system is to accept all key presses into a vector and
+			//act on them until a keyup event deletes the from that vector
 			if(event.type == SDL_KEYUP);
 			{
 				for(unsigned int i =0; i <keyEvents.size(); i++)
@@ -322,28 +345,39 @@ class screen
 				}while(found==false);
 
 			}
+			//Going through all of the current key events
 			for(unsigned int i =0; i < keyEvents.size(); i++)
 			{
 				//cout << "Thats the key!" << endl;
+				int plus = 0;
 				if(keyEvents[i].key.keysym.sym == SDLK_UP)
 				{
-					if(camera.loc.y>5)
-						camera.loc.y-=5;
+					plus = 5;
+					while(camera.loc.y<plus)
+						plus--;
+					camera.loc.y-=plus;
 				}
 				if(keyEvents[i].key.keysym.sym == SDLK_DOWN)
 				{
-					if(camera.loc.y+camera.size.y<length-5)
-						camera.loc.y+=5;
+					plus = 5;
+					while(camera.loc.y+camera.size.y>currentMap->length-plus)
+						plus--;
+
+					camera.loc.y+=plus;
 				}
 				if(keyEvents[i].key.keysym.sym == SDLK_LEFT)
 				{
-					if(camera.loc.x>5)
-						camera.loc.x-=5;
+					plus = 5;
+					while(camera.loc.x<plus)
+						plus--;
+					camera.loc.x-=plus;
 				}
 				if(keyEvents[i].key.keysym.sym == SDLK_RIGHT)
 				{
-					if(camera.loc.x+camera.size.x<width-5)
-						camera.loc.x+=5;
+					plus = 5;
+					while(camera.loc.x+camera.size.x>currentMap->width-plus)
+						plus--;
+					camera.loc.x+=plus;
 				}
 			}
 			return true;
@@ -351,28 +385,31 @@ class screen
 
 };
 
+//The main
+//Is fairly basic,
+//I've tried to keep it simple
 int main() {
 	srand(time(NULL));
 	init();
 	cout << "Yo!";
 	screen frame;
 	bool game = true;
-	map *currentMap = new map("filename.lev");
+	currentMap = new map("filename.lev");
 	int count = 1;
 	double tempo = 0;
 	while (game)
 	{
 		//FIXME
 		tempo = clock();
-		game = frame.events(&objects); //Check for terminating events
+		game = frame.events(&(currentMap->objects)); //Check for terminating events
 		cout << "Checking events took: " << clock()-tempo << endl;
 		tempo = clock();
-		currentMap->update(&objects, length, width, biggest); //Update char maps
+		currentMap->update(); //Update char maps
 		cout << "Updating objects took: " << clock()-tempo << endl;
 		if(count%frameRate == 0)
 		{
 			tempo = clock();
-			frame.update(&objects); //Update screen
+			frame.update(&(currentMap->objects)); //Update screen
 			cout << "Drawing to the screen took: " << clock()-tempo << endl;
 		}
 		count++;
