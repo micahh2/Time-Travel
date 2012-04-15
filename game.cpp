@@ -85,6 +85,7 @@ class screen
 			images.push_back(loadImage("img/purplehat2.png"));
 			images.push_back(loadImage("img/redhat.png"));
 			images.push_back(loadImage("img/rock.png"));
+			images.push_back(loadImage("img/rock2.png"));
 			drag = false;
 			//Event pos set
 			eventx = 0;
@@ -149,7 +150,7 @@ class screen
 		//It Draws everything to the screen
 		void update(vector<character> *objects)
 		{
-			drawRect(0, 0, camera.size.x, camera.size.y);
+			drawRect(0, 0, camera.size.x, camera.size.y, 0,200,0);
 			//drawRect(loc.x, loc.y, size.x, size.y, r, g, b);
 			SDL_Rect square;
 			//SDL_Rect* clip = NULL;
@@ -178,6 +179,8 @@ class screen
 						index = 6;
 					if (objects->at(i).type == rock)
 						index = 7;
+					if (objects->at(i).type == rock2)
+						index = 8;
 					
 					SDL_BlitSurface(images[index], NULL, mainframe, &square);
 				}

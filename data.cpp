@@ -136,7 +136,7 @@ map::map(string filetype)
 	}
 	biggest.x = 0;
 	biggest.y = 0;
-	for (int i =0; i<100; i++)
+	for (int i =0; i<110; i++)
 	{
 		int tsize = 40;//rand()%20+20;
 		int hs = tsize/2+1;
@@ -144,7 +144,7 @@ map::map(string filetype)
 		int team = 0;
 		if(99==i)
 			team=1;
-		if(i<30)
+		if(i<45)
 		{
 			team=2;
 			tsize=80;
@@ -155,6 +155,8 @@ map::map(string filetype)
 			hat = green;
 			if(rand()%5==0)
 				hat = blue;
+			if(rand()%10==0)
+				hat = purple;
 		}
 		if(team==1)
 			hat = red;
@@ -401,6 +403,11 @@ bool enemy::update(vector<character> *objects, int length, int width)
 						hit->teamId = teamId;
 						hit->type = red;
 					}
+					if(hit->type==purple)
+					{
+						objects->at(i).teamId = hit->teamId;
+						objects->at(i).type = green;
+					}
 				}
 				if(hit->type==red)
 				{
@@ -408,6 +415,14 @@ bool enemy::update(vector<character> *objects, int length, int width)
 					{
 						objects->at(i).teamId = teamId;
 						objects->at(i).type = red;
+					}
+				}
+				if(objects->at(i).type==purple)
+				{
+					if(hit->type==red)
+					{
+						hit->teamId = hit->teamId;
+						hit->type = green;
 					}
 				}
 			}
