@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <fstream>
 #ifndef DATA
 #define DATA 
 
@@ -38,9 +39,6 @@ class thing
 		bool updated;
 		bool crash;
         int id;
-        int colId;
-		vector<int> colIds;
-		dim colTry;
         dim loc;
         dim size;
         dim region;
@@ -57,10 +55,13 @@ class character : public thing
         int speed;
         bool pause;
 		int teamId;
-		//int img;
+		dim colTry;
+        character *colObj;
+		vector<character*> colObjs;
 		hatType type;
 
         character(int locx=0, int locy=0, int insizex=0, int insizey=0, int inspeed=0, int team=0, hatType t=green);
+		void update();
         bool atRest();
 		//Not sure what I want to do with that yet...
         //bool collision();

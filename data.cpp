@@ -29,14 +29,12 @@ thing::thing(int locx, int locy, int insizex, int insizey)
 {
     id = nextId;
 	nextId++;
-	colId = -1;
-	colTry.x = 0;
-	colTry.y = 0;
 	loc.x = locx;
 	loc.y = locy;
 	size.x = insizex;
 	size.y = insizey;
 	updated = false;
+	crash = false;
 }
 bool thing::aStar()
 {
@@ -50,6 +48,9 @@ bool thing::aStar()
 character::character(int locx, int locy, int insizex, int insizey, int inspeed, int team, hatType t) : thing(locx, locy, insizex, insizey)
 {
 	type = t;
+	colObj = NULL;
+	colTry.x = 0;
+	colTry.y = 0;
 	teamId = team;
 	id = nextId++;
 	dest.x = locx;
@@ -64,50 +65,33 @@ bool character::atRest()
 		return true;
 	return false;
 }
-
-//.............
-// idlist class
-//.............
-idlist::idlist(vector<character> *objects)
+void character::update()
 {
-	init(objects);
-}
-void idlist::init(vector<character> *objects)
-{
-	list.resize(objects->size()+10,-1);
-	for(unsigned int i = 0; i < objects->size(); i++)
+	for(unsigned int i = 0; i < colObjs.size(); i++)
 	{
-		int size = list.size();
-		if(objects->at(i).id >= size)
-			list.resize(objects->at(i).id*1.5,-1);
-		list[objects->at(i).id] = i;
-	}
-}
-void idlist::update(vector<character> *objects)
-{
-	for(unsigned int i = 0; i < objects->size(); i++)
-	{
-		int size = list.size();
-		if(objects->at(i).id >= size)
-			list.resize(objects->at(i).id*1.5,-1);
-		list[objects->at(i).id] = i;
-	}
-}
-int idlist::get(int colNum)
-{
-	int size = list.size();
-	if(colNum>size)
-		cout << "Major bad goose goose." << endl << endl << endl;
-	int ans = list[colNum];
-	if(ans < 0)
-	{
-		for(unsigned int i = 0; i < list.size(); i++)
+		if(type == red )
 		{
-			cout << i << " : " << list[i] << endl;
+			if(colObjs[i]->type == green)
+			{
+				colObjs[i]->type = red;
+				colObjs[i]->teamId = teamId;
+			}
+			if(colObjs[i]->type == purple)
+			{
+				type = green;
+				teamId = colObjs[i]->teamId;
+			}
 		}
-		cout << "Really bad goose goose.. " << colNum << endl;
+		if(type == purple)
+		{
+			if(colObjs[i]->type == red)
+			{
+				colObjs[i]->type = green;
+				colObjs[i]->teamId = teamId;
+			}
+		}
 	}
-	return ans;
+	colObjs.clear();
 }
 
 //.............
@@ -160,7 +144,7 @@ map::map(string filetype)
 		}
 		if(team==1)
 			hat = red;
-		
+
 		character temp(rand()%(width-tsize)+hs, rand()%(length-tsize)+hs, tsize, tsize, rand()%10+2, team, hat);
 		for (unsigned int j = 0; j < objects.size(); j++)
 		{ 
@@ -181,7 +165,6 @@ map::map(string filetype)
 
 vector<character>* map::update()
 {
-	idlist idnums(&objects);
 	for(unsigned int i = 0; i < objects.size(); i++)
 	{
 		objects.at(i).region.x = objects.at(i).loc.x/biggest.x;
@@ -233,7 +216,7 @@ vector<character>* map::update()
 				dim region2 = objects.at(j).region;
 				if(abs(region1.x-region2.x) <= 1 && abs(region1.y-region2.y) <= 1 && j!=i)
 				{
-					if(!objects.at(i).crash || (!objects.at(idnums.get(objects.at(i).colId)).updated && (objects.at(i).colTry.x != temp.x || objects.at(i).colTry.y != temp.y)))
+					if(!objects[i].crash || objects[i].colObj == NULL || objects[i].colObj->updated || objects[i].colTry.x != temp.x || objects[i].colTry.y != temp.y)
 					{
 						collisionType col = collide(objects.at(i), objects.at(j), temp);
 						if (crash != both)
@@ -247,7 +230,7 @@ vector<character>* map::update()
 							}
 							if(col == ymove)
 							{
-								if(crash!=xmove)
+								if(crash != xmove)
 									crash = ymove;
 								else
 									crash = both;
@@ -255,10 +238,10 @@ vector<character>* map::update()
 							if(col == both)
 							{
 								crash = both;
-								objects.at(i).colId = objects.at(j).id;
+								objects.at(i).colObj = &(objects.at(j));
 							}
 							if(col != neither)
-								objects.at(i).colIds.push_back(objects.at(j).id);
+								objects.at(i).colObjs.push_back(&(objects.at(j)));
 							else
 								wasted++;
 						}
@@ -268,12 +251,13 @@ vector<character>* map::update()
 						crash = both;
 						saved++;
 						retry = 1;
-						if(saved%(objects.size()/5+1)==0 &&false)
+						if(saved%(objects.size()/5+1)==0)
 						{
 							objects.at(i).updated = true;
 							objects.at(i).crash = false;
 						}
 					}
+					objects[i].update();
 				}
 			}
 			if(crash != xmove && crash != both)
@@ -378,56 +362,13 @@ enemy::enemy(int team, string nm)
 }
 bool enemy::update(vector<character> *objects, int length, int width)
 {
-	idlist table(objects);
 	for(unsigned int i = 0; i < objects->size(); i++)
 	{
-
-		if(objects->at(i).teamId == teamId)
+		if(objects->at(i).teamId == teamId && (objects->at(i).atRest() || rand()%200 == 0))
 		{
-			if(objects->at(i).atRest() || rand()%100==0)
-			{
-				objects->at(i).dest.x = rand()%(width-10) + 5;
-				objects->at(i).dest.y = rand()%(length-10) + 5;
-			}
-			//
+			objects->at(i).dest.y = rand()%(length-10)+5; 
+			objects->at(i).dest.x = rand()%(width-10)+5; 
 		}
-		for(unsigned int j = 0; j < objects->at(i).colIds.size(); j++)
-		{
-			character *hit  = &(objects->at(table.get(objects->at(i).colIds.at(j))));
-			if(objects->at(i).type==red || hit->type==red)
-			{
-				if(objects->at(i).type==red)
-				{
-					if(hit->type==green)
-					{
-						hit->teamId = teamId;
-						hit->type = red;
-					}
-					if(hit->type==purple)
-					{
-						objects->at(i).teamId = hit->teamId;
-						objects->at(i).type = green;
-					}
-				}
-				if(hit->type==red)
-				{
-					if(objects->at(i).type==green)
-					{
-						objects->at(i).teamId = teamId;
-						objects->at(i).type = red;
-					}
-				}
-				if(objects->at(i).type==purple)
-				{
-					if(hit->type==red)
-					{
-						hit->teamId = hit->teamId;
-						hit->type = green;
-					}
-				}
-			}
-		}
-		objects->at(i).colIds.clear();
 	}
 	return true;
 }

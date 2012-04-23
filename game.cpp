@@ -4,6 +4,7 @@
 #include <SDL/SDL_image.h>
 #include <time.h>
 #include "data.h"
+#include "menus.h"
 #include <vector>
 
 using namespace std;
@@ -42,6 +43,7 @@ class screen
 		int selectedSize;
 		thing actualDrag;
 		vector<SDL_Event> keyEvents;
+		menu bottomMenu;
 
 		//The code for loading images into surfaces, mostly
 		//used to but them in the "images" vector.
@@ -91,6 +93,7 @@ class screen
 			eventx = 0;
 			eventy = 0;
 			selectedSize = 0;
+			bottomMenu = menu(0,&(camera.size.y),&(camera.size.x));
 		}
 		//Very basic draw, just draws a pixle at position x,y with the "color"
 		void draw(int x, int y, Uint32 color)
@@ -146,11 +149,25 @@ class screen
 		{
 			die();
 		}
+		void moveCamera(dim move)
+		{
+			while(camera.loc.x+camera.size.x>currentMap->length-move.x)
+				move.x--;
+			while(camera.loc.y+camera.size.y>currentMap->length-move.y+bottomMenu.getSize().y)
+				move.y--;
+			while(camera.loc.x+move.x<0)
+				move.x++;
+			while(camera.loc.y+move.y<0)
+				move.y++;
+			camera.loc.x += move.x;
+			camera.loc.y += move.y;
+
+		}
 		//Update() is where the magic happens,
 		//It Draws everything to the screen
 		void update(vector<character> *objects)
 		{
-			drawRect(0, 0, camera.size.x, camera.size.y, 0,200,0);
+			drawRect(0, 0, camera.size.x, camera.size.y, 0,150,0);
 			//drawRect(loc.x, loc.y, size.x, size.y, r, g, b);
 			SDL_Rect square;
 			//SDL_Rect* clip = NULL;
@@ -185,8 +202,9 @@ class screen
 					SDL_BlitSurface(images[index], NULL, mainframe, &square);
 				}
 			}
-			if (dragBox.on)
+			if (dragBox.on && (dragBox.size.x <= camera.size.x && dragBox.size.y <= camera.size.y))
 				drawRect(dragBox.loc.x, dragBox.loc.y, dragBox.size.x, dragBox.size.y, 0, 255, 255);
+			drawRect(bottomMenu.getLoc().x, bottomMenu.getLoc().y, bottomMenu.getSize().x, bottomMenu.getSize().y, 100, 100, 100);
 
 			SDL_Flip(mainframe);
 
@@ -349,36 +367,22 @@ class screen
 			for(unsigned int i =0; i < keyEvents.size(); i++)
 			{
 				//cout << "Thats the key!" << endl;
-				int plus = 0;
+				dim plus;
+				plus.x = 0;
+				plus.y = 0;
 				if(keyEvents[i].key.keysym.sym == SDLK_UP)
-				{
-					plus = 5;
-					while(camera.loc.y<plus)
-						plus--;
-					camera.loc.y-=plus;
-				}
-				if(keyEvents[i].key.keysym.sym == SDLK_DOWN)
-				{
-					plus = 5;
-					while(camera.loc.y+camera.size.y>currentMap->length-plus)
-						plus--;
+					plus.y-=5;
 
-					camera.loc.y+=plus;
-				}
+				if(keyEvents[i].key.keysym.sym == SDLK_DOWN)
+					plus.y+=5;
+				
 				if(keyEvents[i].key.keysym.sym == SDLK_LEFT)
-				{
-					plus = 5;
-					while(camera.loc.x<plus)
-						plus--;
-					camera.loc.x-=plus;
-				}
+					plus.x-=5;
+
 				if(keyEvents[i].key.keysym.sym == SDLK_RIGHT)
-				{
-					plus = 5;
-					while(camera.loc.x+camera.size.x>currentMap->width-plus)
-						plus--;
-					camera.loc.x+=plus;
-				}
+					plus.x+=5;
+
+				moveCamera(plus);
 			}
 			return true;
 		}
