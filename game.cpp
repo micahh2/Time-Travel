@@ -404,21 +404,20 @@ int main() {
 	while (game)
 	{
 		//FIXME
-		tempo = clock();
+		tempo = time(NULL);
 		game = frame.events(&(currentMap->objects)); //Check for terminating events
-		cout << "Checking events took: " << clock()-tempo << endl;
-		tempo = clock();
+		cout << "Checking events took: " << time(NULL)-tempo << endl;
+		tempo = time(NULL);
 		currentMap->update(); //Update char maps
-		cout << "Updating objects took: " << clock()-tempo << endl;
-		if(count%frameRate == 0)
+		cout << "Updating objects took: " << time(NULL)-tempo << endl;
+        if(count%frameRate==0)
 		{
-			tempo = clock();
+			tempo = time(NULL);
 			frame.update(&(currentMap->objects)); //Update screen
-			cout << "Drawing to the screen took: " << clock()-tempo << endl;
+			cout << "Drawing to the screen took: " << time(NULL)-tempo << endl;
 		}
 		count++;
 		//repeat
 	}
 	delete currentMap;
-	return 0;
 }

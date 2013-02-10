@@ -120,7 +120,7 @@ map::map(string filetype)
 	}
 	biggest.x = 0;
 	biggest.y = 0;
-	for (int i =0; i<110; i++)
+	for (int i =0; i<1010; i++)
 	{
 		int tsize = 40;//rand()%20+20;
 		int hs = tsize/2+1;
@@ -250,15 +250,15 @@ vector<character>* map::update()
 					{
 						crash = both;
 						saved++;
-						retry = 1;
-						if(saved%(objects.size()/5+1)==0)
-						{
-							objects.at(i).updated = true;
-							objects.at(i).crash = false;
-						}
+						//retry = 1; //The idea is that about everyother time they will retry to move
+						//if(saved%(objects.size()/5+1)==0)
+                        objects.at(i).updated = true;
+                        objects.at(i).crash = false;
 					}
 					objects[i].update();
 				}
+                else
+                    saved++;
 			}
 			if(crash != xmove && crash != both)
 				objects.at(i).loc.x = temp.x;
@@ -285,6 +285,7 @@ vector<character>* map::update()
 		}
 	}
 	cout << "Wasted: " << wasted << endl;
+	cout << "Saved: " << saved << endl;
 	double et = clock();
 	for(unsigned int i = 0; i < enemies.size(); i++)
 	{
